@@ -37,23 +37,37 @@ bot = Bot(token=TG_TOKEN) if TG_TOKEN else None
 @app.on_event("startup")
 def on_startup():
     init_db()
-    # Create default admin if not exists
-    db = next(get_db())
-    if not db.query(User).filter(User.username == "admin").first():
-        admin = User(
-            username="admin", 
-            hashed_password=get_password_hash("admin"), 
-            role="admin",
-            balance=10000
-        )
-        db.add(admin)
-        db.commit()
+    ensure_admin_exists()
+
+def ensure_admin_exists():
+    """Helper to ensure admin exists. Call on startup and if login fails."""
+    try:
+        db = SessionLocal()
+        if not db.query(User).filter(User.username == "admin").first():
+            print("Creating default admin user...")
+            admin = User(
+                username="admin", 
+                hashed_password=get_password_hash("admin"), 
+                role="admin",
+                balance=10000
+            )
+            db.add(admin)
+            db.commit()
+        db.close()
+    except Exception as e:
+        print(f"Error ensuring admin exists: {e}")
 
 # --- Auth Endpoints ---
 
 @app.post("/api/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == form_data.username).first()
+    
+    # Lazy admin creation: if admin not found, try to create him (handling Vercel cold starts)
+    if not user and form_data.username == "admin":
+        ensure_admin_exists()
+        user = db.query(User).filter(User.username == "admin").first()
+
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

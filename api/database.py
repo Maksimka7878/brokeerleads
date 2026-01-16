@@ -62,7 +62,14 @@ class LeadTransaction(Base):
     user = relationship("User", back_populates="transactions")
 
 # Database setup
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./crm.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    # On Vercel (or any read-only env), use /tmp for SQLite
+    if os.path.exists("/tmp"):
+         DATABASE_URL = "sqlite:////tmp/crm.db"
+    else:
+         DATABASE_URL = "sqlite:///./crm.db"
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
