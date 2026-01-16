@@ -58,6 +58,17 @@ def fix_schema(db: Session = Depends(get_db)):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.get("/api/migrate_stages")
+def migrate_stages(db: Session = Depends(get_db)):
+    """Migrate leads from 'Первый контакт' to 'Новый'."""
+    try:
+        # Update leads with old stage name
+        result = db.query(Lead).filter(Lead.stage == "Первый контакт").update({"stage": "Новый"})
+        db.commit()
+        return {"status": "success", "updated_count": result, "message": f"Updated {result} leads from 'Первый контакт' to 'Новый'"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 def ensure_admin_exists():
     """Helper to ensure admin exists. Call on startup and if login fails."""
     try:
@@ -298,7 +309,7 @@ async def import_leads(
                 full_name=str(row.get('Полное имя')) if pd.notna(row.get('Полное имя')) else None,
                 username=str(row.get('Юзернейм')) if pd.notna(row.get('Юзернейм')) else None,
                 bio=str(row.get('Описание профиля')) if pd.notna(row.get('Описание профиля')) else None,
-                stage="Первый контакт"
+                stage="Новый"
             )
             db.add(lead)
             count += 1
