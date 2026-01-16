@@ -269,7 +269,7 @@ async def import_leads(
                     if phone.endswith(".0"):
                         phone = phone[:-2]
                 except:
-                    phone = str(phone_val)
+                    phone = None # Ignore invalid phones
             else:
                 phone = None
 
