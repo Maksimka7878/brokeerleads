@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, status, R
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Optional
 from datetime import datetime, timedelta
 import pandas as pd
@@ -41,6 +42,20 @@ def on_startup():
         ensure_admin_exists()
     except Exception as e:
         print(f"Startup error: {e}")
+
+@app.get("/api/fix_schema")
+def fix_schema(db: Session = Depends(get_db)):
+    """Helper to drop and recreate leads table if schema is corrupted."""
+    try:
+        # Drop the table to force recreation with correct types
+        db.execute(text("DROP TABLE IF EXISTS leads CASCADE"))
+        db.commit()
+        
+        # Recreate tables
+        init_db()
+        return {"status": "success", "message": "Leads table dropped and recreated. Please try importing again."}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 def ensure_admin_exists():
     """Helper to ensure admin exists. Call on startup and if login fails."""
