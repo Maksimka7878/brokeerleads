@@ -65,8 +65,8 @@ class LeadTransaction(Base):
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    # On Vercel (or any read-only env), use /tmp for SQLite
-    if os.path.exists("/tmp"):
+    # On Vercel, use /tmp for SQLite (read-only file system elsewhere)
+    if os.environ.get("VERCEL"):
          DATABASE_URL = "sqlite:////tmp/crm.db"
     else:
          DATABASE_URL = "sqlite:///./crm.db"
