@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Float, Boolean, BigInteger
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from datetime import datetime
 import os
@@ -25,7 +25,7 @@ class Lead(Base):
     __tablename__ = 'leads'
 
     id = Column(Integer, primary_key=True)
-    telegram_id = Column(Integer, unique=True, nullable=True)
+    telegram_id = Column(BigInteger, unique=True, nullable=True)
     phone = Column(String, nullable=True)
     full_name = Column(String, nullable=True)
     username = Column(String, nullable=True)

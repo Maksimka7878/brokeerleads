@@ -35,8 +35,10 @@ export default function ContactsPage() {
       await api.post("/import", formData);
       alert("Импорт завершен успешно!");
       fetchLeads();
-    } catch (err) {
-      alert("Ошибка импорта");
+    } catch (err: any) {
+      console.error(err);
+      const message = err.response?.data?.detail || "Ошибка импорта";
+      alert(`Ошибка: ${message}`);
     }
   };
 

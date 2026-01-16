@@ -232,9 +232,25 @@ async def import_leads(
                  if existing:
                      continue
 
+            phone_val = row.get('Номер телефона')
+            if pd.notna(phone_val):
+                # Handle float phone numbers (e.g. 79991234567.0 -> "79991234567")
+                try:
+                    if isinstance(phone_val, float) and phone_val.is_integer():
+                        phone = str(int(phone_val))
+                    else:
+                        phone = str(phone_val)
+                    # Remove .0 suffix if it persists
+                    if phone.endswith(".0"):
+                        phone = phone[:-2]
+                except:
+                    phone = str(phone_val)
+            else:
+                phone = None
+
             lead = Lead(
                 telegram_id=telegram_id if pd.notna(telegram_id) else None,
-                phone=str(row.get('Номер телефона')) if pd.notna(row.get('Номер телефона')) else None,
+                phone=phone,
                 full_name=row.get('Полное имя'),
                 username=row.get('Юзернейм'),
                 bio=row.get('Описание профиля'),
