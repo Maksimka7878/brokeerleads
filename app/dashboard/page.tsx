@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import ProtectedLayout from "@/components/ProtectedLayout";
 import api from "@/lib/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { ArrowUpRight, ArrowDownLeft, TrendingUp, MessageCircle } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, TrendingUp, MessageCircle, Layout, Trello } from "lucide-react";
+import KanbanBoard from "@/components/KanbanBoard";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [connectData, setConnectData] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"overview" | "kanban">("kanban");
 
   useEffect(() => {
     api.get("/stats").then((res) => setStats(res.data));
@@ -27,10 +29,42 @@ export default function Dashboard() {
 
   return (
     <ProtectedLayout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-800">Обзор эффективности</h2>
-        
-        {!stats.telegram_connected && (
+      <div className="space-y-6 h-full flex flex-col">
+        <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">
+                {activeTab === "overview" ? "Обзор эффективности" : "CRM Доска"}
+            </h2>
+            <div className="flex bg-gray-100 p-1 rounded-lg">
+                <button
+                    onClick={() => setActiveTab("kanban")}
+                    className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        activeTab === "kanban" 
+                        ? "bg-white text-blue-600 shadow-sm" 
+                        : "text-gray-500 hover:text-gray-900"
+                    }`}
+                >
+                    <Trello className="w-4 h-4 mr-2" />
+                    Канбан
+                </button>
+                <button
+                    onClick={() => setActiveTab("overview")}
+                    className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                        activeTab === "overview" 
+                        ? "bg-white text-blue-600 shadow-sm" 
+                        : "text-gray-500 hover:text-gray-900"
+                    }`}
+                >
+                    <Layout className="w-4 h-4 mr-2" />
+                    Обзор
+                </button>
+            </div>
+        </div>
+
+        {activeTab === "kanban" ? (
+            <KanbanBoard />
+        ) : (
+            <>
+            {!stats.telegram_connected && (
             <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h3 className="text-lg font-bold text-blue-900 mb-2">Подключите Telegram-бота</h3>
@@ -137,6 +171,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
     </ProtectedLayout>
   );
