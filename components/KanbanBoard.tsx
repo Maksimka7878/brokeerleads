@@ -21,6 +21,20 @@ const STAGES = [
   "Заключен"
 ];
 
+const STAGE_COLORS: Record<string, string> = {
+  "Новый": "bg-blue-50 border-blue-200 text-blue-800",
+  "Первое сообщение": "bg-indigo-50 border-indigo-200 text-indigo-800",
+  "2 сообщение": "bg-indigo-50 border-indigo-200 text-indigo-800",
+  "3 сообщение": "bg-indigo-50 border-indigo-200 text-indigo-800",
+  "Заинтересован": "bg-amber-50 border-amber-200 text-amber-800",
+  "На этапе формирования запроса": "bg-orange-50 border-orange-200 text-orange-800",
+  "Пропал": "bg-red-50 border-red-200 text-red-800",
+  "Видеосозвон": "bg-purple-50 border-purple-200 text-purple-800",
+  "На этапе согласования условий": "bg-teal-50 border-teal-200 text-teal-800",
+  "Этап договор": "bg-emerald-50 border-emerald-200 text-emerald-800",
+  "Заключен": "bg-green-100 border-green-300 text-green-900"
+};
+
 interface Lead {
   id: number;
   full_name: string;
@@ -60,14 +74,15 @@ function SortableItem({ lead }: { lead: Lead }) {
 
 function DroppableColumn({ id, items }: { id: string; items: Lead[] }) {
   const { setNodeRef } = useSortable({ id });
+  const colorClass = STAGE_COLORS[id] || "bg-gray-50 border-gray-200 text-gray-700";
 
   return (
-    <div className="flex-shrink-0 w-72 bg-gray-50 rounded-xl flex flex-col max-h-full">
-      <div className="p-3 font-semibold text-gray-700 border-b border-gray-200 sticky top-0 bg-gray-50 rounded-t-xl z-10 flex justify-between items-center">
-        <span>{id}</span>
-        <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">{items.length}</span>
+    <div className="flex-shrink-0 w-80 bg-gray-50/50 rounded-xl flex flex-col max-h-full border border-gray-100">
+      <div className={`p-3 font-semibold border-b sticky top-0 rounded-t-xl z-10 flex justify-between items-center ${colorClass}`}>
+        <span className="truncate">{id}</span>
+        <span className="bg-white/50 text-current text-xs px-2 py-0.5 rounded-full shadow-sm">{items.length}</span>
       </div>
-      <div ref={setNodeRef} className="p-2 flex-1 overflow-y-auto min-h-[100px]">
+      <div ref={setNodeRef} className="p-2 flex-1 overflow-y-auto min-h-[100px] space-y-2">
         <SortableContext items={items.map(l => l.id)} strategy={verticalListSortingStrategy}>
           {items.map((lead) => (
             <SortableItem key={lead.id} lead={lead} />

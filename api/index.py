@@ -144,6 +144,17 @@ def get_leads(
     leads = query.offset(skip).limit(limit).all()
     return leads
 
+@app.get("/api/leads/{lead_id}", response_model=LeadResponse)
+def get_lead_details(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return lead
+
 @app.post("/api/interactions")
 def add_interaction(
     interaction: InteractionCreate, 
