@@ -54,15 +54,7 @@ def fix_schema(db: Session = Depends(get_db)):
         # Recreate tables
         init_db()
         
-        # Diagnostic: Check columns
-        result = db.execute(text("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'leads'"))
-        columns = [{row[0]: row[1]} for row in result]
-        
-        return {
-            "status": "success", 
-            "message": "Leads table dropped and recreated.",
-            "columns": columns
-        }
+        return {"status": "success", "message": "Leads table dropped and recreated. Please try importing again."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -291,10 +283,10 @@ async def import_leads(
 
             lead = Lead(
                 telegram_id=telegram_id,
-                phone=phone,
-                full_name=row.get('Полное имя'),
-                username=row.get('Юзернейм'),
-                bio=row.get('Описание профиля'),
+                phone=str(phone) if phone else None,
+                full_name=str(row.get('Полное имя')) if pd.notna(row.get('Полное имя')) else None,
+                username=str(row.get('Юзернейм')) if pd.notna(row.get('Юзернейм')) else None,
+                bio=str(row.get('Описание профиля')) if pd.notna(row.get('Описание профиля')) else None,
                 stage="Первый контакт"
             )
             db.add(lead)
