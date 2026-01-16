@@ -31,3 +31,4 @@ dist/
 
 # Vercel
 .vercel
+node_modules
