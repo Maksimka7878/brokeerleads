@@ -241,12 +241,22 @@ async def import_leads(
         df = pd.read_excel(io.BytesIO(contents))
         count = 0
         for index, row in df.iterrows():
-            telegram_id = row.get('ID')
-            if telegram_id and pd.notna(telegram_id):
+            # Handle float/int ID correctly
+            raw_id = row.get('ID')
+            if pd.notna(raw_id):
+                try:
+                    telegram_id = int(float(raw_id))
+                except:
+                    telegram_id = None
+            else:
+                telegram_id = None
+
+            if telegram_id:
                  existing = db.query(Lead).filter(Lead.telegram_id == telegram_id).first()
                  if existing:
                      continue
-
+            
+            # Handle phone
             phone_val = row.get('Номер телефона')
             if pd.notna(phone_val):
                 # Handle float phone numbers (e.g. 79991234567.0 -> "79991234567")
@@ -264,7 +274,7 @@ async def import_leads(
                 phone = None
 
             lead = Lead(
-                telegram_id=telegram_id if pd.notna(telegram_id) else None,
+                telegram_id=telegram_id,
                 phone=phone,
                 full_name=row.get('Полное имя'),
                 username=row.get('Юзернейм'),
