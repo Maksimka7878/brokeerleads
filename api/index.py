@@ -36,8 +36,11 @@ bot = Bot(token=TG_TOKEN) if TG_TOKEN else None
 
 @app.on_event("startup")
 def on_startup():
-    init_db()
-    ensure_admin_exists()
+    try:
+        init_db()
+        ensure_admin_exists()
+    except Exception as e:
+        print(f"Startup error: {e}")
 
 def ensure_admin_exists():
     """Helper to ensure admin exists. Call on startup and if login fails."""
