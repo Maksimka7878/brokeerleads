@@ -11,28 +11,43 @@ export default function Sidebar() {
 
   const menuItems = [
     { name: "Дашборд", icon: LayoutDashboard, href: "/dashboard" },
-    { name: "Контакты", icon: Users, href: "/contacts" }, // Need to move contacts page
+    { name: "Контакты", icon: Users, href: "/contacts" },
     { name: "Рассылка", icon: Send, href: "/distribution" },
   ];
 
   return (
-    <div className="w-64 bg-white border-r h-full flex flex-col">
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-blue-600">SalesTracker</h1>
-        <p className="text-xs text-gray-500 mt-1">B2B CRM System</p>
-      </div>
-
-      <div className="px-6 mb-6">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <div className="text-sm font-medium text-gray-900">{user?.username}</div>
-          <div className="text-xs text-gray-500 capitalize">{user?.role}</div>
-          <div className="mt-2 text-sm font-bold text-blue-700">
-            Баланс: {user?.balance} ⚡
+    <div className="w-64 bg-slate-900 text-white h-full flex flex-col shadow-xl">
+      <div className="p-6 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <BarChart3 className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">SalesTracker</h1>
+            <p className="text-xs text-slate-400">B2B CRM System</p>
           </div>
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
+      <div className="p-4">
+        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 backdrop-blur-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-sm font-bold">
+              {user?.username?.[0]?.toUpperCase() || "U"}
+            </div>
+            <div className="overflow-hidden">
+              <div className="text-sm font-medium truncate">{user?.username}</div>
+              <div className="text-xs text-slate-400 capitalize truncate">{user?.role}</div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between bg-slate-900/50 rounded-lg px-3 py-2 border border-slate-800">
+            <span className="text-xs text-slate-400">Баланс</span>
+            <span className="text-sm font-bold text-blue-400">{user?.balance} ⚡</span>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 px-3 py-4 space-y-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -40,25 +55,27 @@ export default function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+              className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group ${
                 isActive
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
+                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
               }`}
             >
-              <Icon className="mr-3 h-5 w-5" />
+              <Icon className={`mr-3 h-5 w-5 transition-colors ${
+                isActive ? "text-white" : "text-slate-500 group-hover:text-white"
+              }`} />
               {item.name}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t">
+      <div className="p-4 border-t border-slate-800">
         <button
           onClick={logout}
-          className="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="flex items-center w-full px-4 py-3 text-sm font-medium text-slate-400 hover:bg-red-500/10 hover:text-red-400 rounded-xl transition-colors group"
         >
-          <LogOut className="mr-3 h-5 w-5" />
+          <LogOut className="mr-3 h-5 w-5 group-hover:text-red-400 transition-colors" />
           Выйти
         </button>
       </div>
