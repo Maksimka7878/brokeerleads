@@ -37,8 +37,12 @@ export default function ContactsPage() {
       fetchLeads();
     } catch (err: any) {
       console.error(err);
+      // Simplify error message for user
       const message = err.response?.data?.detail || "Ошибка импорта";
-      alert(`Ошибка: ${message}`);
+      const userMessage = message.includes("InvalidTextRepresentation") 
+        ? "Ошибка в данных файла: проверьте, что в колонках правильные типы данных (числа, текст)."
+        : `Ошибка: ${message}`;
+      alert(userMessage);
     }
   };
 
