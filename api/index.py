@@ -243,13 +243,12 @@ async def import_leads(
         for index, row in df.iterrows():
             # Handle float/int ID correctly
             raw_id = row.get('ID')
+            telegram_id = None
             if pd.notna(raw_id):
                 try:
                     telegram_id = int(float(raw_id))
                 except:
                     telegram_id = None
-            else:
-                telegram_id = None
 
             if telegram_id:
                  existing = db.query(Lead).filter(Lead.telegram_id == telegram_id).first()
@@ -258,20 +257,28 @@ async def import_leads(
             
             # Handle phone
             phone_val = row.get('Номер телефона')
+            phone = None
             if pd.notna(phone_val):
                 # Handle float phone numbers (e.g. 79991234567.0 -> "79991234567")
                 try:
-                    if isinstance(phone_val, float) and phone_val.is_integer():
-                        phone = str(int(phone_val))
+                    # Clean up string first if it's a string
+                    s_val = str(phone_val).strip()
+                    
+                    # If it looks like a float/int
+                    if s_val.replace('.','',1).isdigit():
+                        if isinstance(phone_val, float) or '.' in s_val:
+                            phone = str(int(float(s_val)))
+                        else:
+                            phone = s_val
                     else:
-                        phone = str(phone_val)
+                        # Just keep as string if it's text (e.g. "+7...")
+                        phone = s_val
+                        
                     # Remove .0 suffix if it persists
-                    if phone.endswith(".0"):
+                    if phone and phone.endswith(".0"):
                         phone = phone[:-2]
                 except:
                     phone = None # Ignore invalid phones
-            else:
-                phone = None
 
             lead = Lead(
                 telegram_id=telegram_id,
