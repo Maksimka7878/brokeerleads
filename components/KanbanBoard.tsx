@@ -69,7 +69,7 @@ function SortableItem({ lead, onClick }: { lead: Lead; onClick: () => void }) {
     >
       <div className="font-medium text-gray-900 text-sm truncate pr-6">{lead.full_name || "Без имени"}</div>
       <div className="text-xs text-blue-500 truncate">@{lead.username || "no_user"}</div>
-      {lead.phone && <div className="text-xs text-gray-500 mt-1">{lead.phone}</div>}
+      {/* {lead.phone && <div className="text-xs text-gray-500 mt-1">{lead.phone}</div>} */}
       <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" title="Подробнее"></div>
     </div>
   );
