@@ -6,6 +6,7 @@ import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor,
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import api from '@/lib/api';
+import LeadModal from './LeadModal';
 
 const STAGES = [
   "Новый",
@@ -43,7 +44,7 @@ interface Lead {
   stage: string;
 }
 
-function SortableItem({ lead }: { lead: Lead }) {
+function SortableItem({ lead, onClick }: { lead: Lead; onClick: () => void }) {
   const {
     attributes,
     listeners,
@@ -63,16 +64,18 @@ function SortableItem({ lead }: { lead: Lead }) {
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-2 cursor-grab hover:shadow-md transition-shadow"
+      onClick={onClick}
+      className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 mb-2 cursor-grab hover:shadow-md transition-shadow group relative"
     >
-      <div className="font-medium text-gray-900 text-sm truncate">{lead.full_name || "Без имени"}</div>
+      <div className="font-medium text-gray-900 text-sm truncate pr-6">{lead.full_name || "Без имени"}</div>
       <div className="text-xs text-blue-500 truncate">@{lead.username || "no_user"}</div>
       {lead.phone && <div className="text-xs text-gray-500 mt-1">{lead.phone}</div>}
+      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" title="Подробнее"></div>
     </div>
   );
 }
 
-function DroppableColumn({ id, items }: { id: string; items: Lead[] }) {
+function DroppableColumn({ id, items, onCardClick }: { id: string; items: Lead[]; onCardClick: (id: number) => void }) {
   const { setNodeRef } = useSortable({ id });
   const colorClass = STAGE_COLORS[id] || "bg-gray-50 border-gray-200 text-gray-700";
 
@@ -85,7 +88,7 @@ function DroppableColumn({ id, items }: { id: string; items: Lead[] }) {
       <div ref={setNodeRef} className="p-2 flex-1 overflow-y-auto min-h-[100px] space-y-2">
         <SortableContext items={items.map(l => l.id)} strategy={verticalListSortingStrategy}>
           {items.map((lead) => (
-            <SortableItem key={lead.id} lead={lead} />
+            <SortableItem key={lead.id} lead={lead} onClick={() => onCardClick(lead.id)} />
           ))}
         </SortableContext>
       </div>
@@ -96,10 +99,11 @@ function DroppableColumn({ id, items }: { id: string; items: Lead[] }) {
 export default function KanbanBoard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [selectedLeadId]); // Refresh when modal closes
 
   const fetchLeads = async () => {
     try {
@@ -188,6 +192,7 @@ export default function KanbanBoard() {
               key={stage} 
               id={stage} 
               items={leads.filter(l => l.stage === stage)} 
+              onCardClick={setSelectedLeadId}
             />
           ))}
           
@@ -200,6 +205,14 @@ export default function KanbanBoard() {
           </DragOverlay>
         </DndContext>
       </div>
+
+      {selectedLeadId && (
+        <LeadModal 
+          leadId={selectedLeadId} 
+          isOpen={!!selectedLeadId} 
+          onClose={() => setSelectedLeadId(null)} 
+        />
+      )}
     </div>
   );
 }
