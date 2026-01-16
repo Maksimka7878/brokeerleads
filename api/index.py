@@ -53,7 +53,16 @@ def fix_schema(db: Session = Depends(get_db)):
         
         # Recreate tables
         init_db()
-        return {"status": "success", "message": "Leads table dropped and recreated. Please try importing again."}
+        
+        # Diagnostic: Check columns
+        result = db.execute(text("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'leads'"))
+        columns = [{row[0]: row[1]} for row in result]
+        
+        return {
+            "status": "success", 
+            "message": "Leads table dropped and recreated.",
+            "columns": columns
+        }
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
