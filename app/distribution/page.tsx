@@ -28,7 +28,15 @@ export default function DistributionPage() {
       setStatus("success");
       setMessage(`Успешно отправлено ${count} лидов! Остаток: ${res.data.remaining_balance}`);
 
+      // Clear form
+      setRecipient("");
+      setCount(10);
+      setPackageType("Cold");
+
       await refreshUser();
+
+      // Clear status after 3 seconds
+      setTimeout(() => setStatus("idle"), 3000);
     } catch (err: any) {
       setStatus("error");
       setMessage(err.response?.data?.detail || "Ошибка при отправке");

@@ -220,37 +220,46 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
 
 @app.post("/api/distribute")
 async def distribute_leads(
-    transaction: TransactionCreate, 
+    transaction: TransactionCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Validate input
+    if not transaction.recipient or not transaction.recipient.strip():
+        raise HTTPException(status_code=400, detail="Recipient is required")
+
+    if transaction.count <= 0:
+        raise HTTPException(status_code=400, detail="Count must be greater than 0")
+
     # Check balance
     if current_user.balance < transaction.count:
         raise HTTPException(status_code=400, detail="Insufficient balance")
-    
+
     # Deduct balance
     current_user.balance -= transaction.count
-    
+
     # Record transaction
     new_tx = LeadTransaction(
         user_id=current_user.id,
-        recipient=transaction.recipient,
+        recipient=transaction.recipient.strip(),
         package_type=transaction.package_type,
         count=transaction.count
     )
+    db.add(current_user)
     db.add(new_tx)
     db.commit()
-    
-    # TODO: Implement actual sending logic via Telegram if recipient is a TG ID
+    db.refresh(current_user)
+
+    # Send Telegram message if recipient is a TG ID
     if bot and transaction.recipient.isdigit():
         try:
             await bot.send_message(
-                chat_id=transaction.recipient, 
+                chat_id=transaction.recipient,
                 text=f"🎁 You have received {transaction.count} leads of type {transaction.package_type}!"
             )
         except Exception as e:
             print(f"Failed to send Telegram message: {e}")
-            
+
     return {"status": "success", "remaining_balance": current_user.balance}
 
 @app.post("/api/import")
