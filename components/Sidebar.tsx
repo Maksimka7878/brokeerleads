@@ -16,7 +16,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="w-72 h-full flex flex-col glass-card border-r border-white/5">
+    <div className="w-72 h-full flex flex-col bg-slate-900/95 backdrop-blur-xl border-r border-white/10 shadow-2xl shadow-black/50">
       {/* Logo Section */}
       <div className="p-6 border-b border-white/5">
         <div className="flex items-center gap-3">

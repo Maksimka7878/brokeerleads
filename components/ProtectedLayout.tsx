@@ -30,9 +30,9 @@ export default function ProtectedLayout({
   if (!user) return null;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen">
       <Sidebar />
-      <main className="flex-1 overflow-auto p-8">
+      <main className="flex-1 overflow-auto p-8 bg-transparent">
         {children}
       </main>
     </div>
