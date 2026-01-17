@@ -9,6 +9,7 @@ import pandas as pd
 import io
 import os
 import uuid
+import re
 from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
@@ -18,22 +19,63 @@ from .models import (
     UserCreate, UserResponse, Token, TransactionCreate, TransactionResponse,
     ConnectTelegramResponse
 )
-from .auth import verify_password, get_password_hash, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from .auth import verify_password, get_password_hash, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES, validate_password
 
 app = FastAPI()
 
-# Allow CORS
+# Configure CORS - restrict to frontend URLs only
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "localhost:3000,127.0.0.1:3000").split(",")
+allowed_origins = [origin.strip() for origin in allowed_origins]
+# Add https/http variants
+cors_origins = []
+for origin in allowed_origins:
+    cors_origins.append(f"http://{origin}")
+    cors_origins.append(f"https://{origin}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Telegram Bot Setup
 TG_TOKEN = os.getenv("TG_TOKEN")
 bot = Bot(token=TG_TOKEN) if TG_TOKEN else None
+
+# Rate limiting - track login attempts per IP
+login_attempts = {}
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_DURATION = 15 * 60  # 15 minutes in seconds
+
+def is_rate_limited(ip_address: str) -> bool:
+    """Check if IP is rate limited"""
+    now = datetime.utcnow()
+    if ip_address in login_attempts:
+        attempts, timestamp = login_attempts[ip_address]
+        elapsed = (now - timestamp).total_seconds()
+        if elapsed < LOCKOUT_DURATION:
+            if attempts >= MAX_LOGIN_ATTEMPTS:
+                return True
+        else:
+            # Reset after lockout period
+            del login_attempts[ip_address]
+    return False
+
+def record_login_attempt(ip_address: str, success: bool = False) -> None:
+    """Record a login attempt"""
+    if success:
+        # Clear attempts on successful login
+        if ip_address in login_attempts:
+            del login_attempts[ip_address]
+    else:
+        now = datetime.utcnow()
+        if ip_address not in login_attempts:
+            login_attempts[ip_address] = (1, now)
+        else:
+            attempts, timestamp = login_attempts[ip_address]
+            login_attempts[ip_address] = (attempts + 1, now)
 
 @app.on_event("startup")
 def on_startup():
@@ -75,14 +117,18 @@ def ensure_admin_exists():
         db = SessionLocal()
         if not db.query(User).filter(User.username == "admin").first():
             print("Creating default admin user...")
+            # Use environment variable for admin password, or generate a secure default
+            admin_password = os.getenv("ADMIN_PASSWORD", "Admin@2024Secure!Password")
             admin = User(
-                username="admin", 
-                hashed_password=get_password_hash("admin"), 
+                username="admin",
+                hashed_password=get_password_hash(admin_password),
                 role="admin",
                 balance=10000
             )
             db.add(admin)
             db.commit()
+            if admin_password == "Admin@2024Secure!Password":
+                print("WARNING: Using default admin password. Set ADMIN_PASSWORD environment variable in production!")
         db.close()
     except Exception as e:
         print(f"Error ensuring admin exists: {e}")
@@ -90,20 +136,39 @@ def ensure_admin_exists():
 # --- Auth Endpoints ---
 
 @app.post("/api/token", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login_for_access_token(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    # Get client IP address
+    client_ip = request.client.host if request.client else "unknown"
+
+    # Check rate limiting
+    if is_rate_limited(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many login attempts. Please try again after {LOCKOUT_DURATION // 60} minutes.",
+        )
+
     user = db.query(User).filter(User.username == form_data.username).first()
-    
+
     # Lazy admin creation: if admin not found, try to create him (handling Vercel cold starts)
     if not user and form_data.username == "admin":
         ensure_admin_exists()
         user = db.query(User).filter(User.username == "admin").first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
+        record_login_attempt(client_ip, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Successful login - record attempt
+    record_login_attempt(client_ip, success=True)
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
@@ -116,13 +181,25 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 
 @app.post("/api/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
+    # Validate username
+    if not user.username or len(user.username) < 3:
+        raise HTTPException(status_code=400, detail="Username must be at least 3 characters long")
+    if not re.match(r'^[a-zA-Z0-9_]+$', user.username):
+        raise HTTPException(status_code=400, detail="Username can only contain letters, numbers, and underscores")
+
+    # Check if username already exists
     if db.query(User).filter(User.username == user.username).first():
         raise HTTPException(status_code=400, detail="Username already registered")
-    
+
+    # Validate password
+    is_valid, error_msg = validate_password(user.password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+
     new_user = User(
         username=user.username,
         hashed_password=get_password_hash(user.password),
-        balance=100 # Welcome bonus
+        balance=100  # Welcome bonus
     )
     db.add(new_user)
     db.commit()
