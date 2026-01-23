@@ -115,10 +115,13 @@ def ensure_admin_exists():
     """Helper to ensure admin exists. Call on startup and if login fails."""
     try:
         db = SessionLocal()
-        if not db.query(User).filter(User.username == "admin").first():
+        # Use environment variable for admin password, or generate a secure default
+        admin_password = os.getenv("ADMIN_PASSWORD", "Admin@2024Secure!Password")
+        
+        user = db.query(User).filter(User.username == "admin").first()
+        
+        if not user:
             print("Creating default admin user...")
-            # Use environment variable for admin password, or generate a secure default
-            admin_password = os.getenv("ADMIN_PASSWORD", "Admin@2024Secure!Password")
             admin = User(
                 username="admin",
                 hashed_password=get_password_hash(admin_password),
@@ -127,8 +130,16 @@ def ensure_admin_exists():
             )
             db.add(admin)
             db.commit()
-            if admin_password == "Admin@2024Secure!Password":
-                print("WARNING: Using default admin password. Set ADMIN_PASSWORD environment variable in production!")
+        else:
+            # Check if password needs update
+            if not verify_password(admin_password, user.hashed_password):
+                print("Updating admin password from environment variable...")
+                user.hashed_password = get_password_hash(admin_password)
+                db.commit()
+                
+        if admin_password == "Admin@2024Secure!Password":
+            print("WARNING: Using default admin password. Set ADMIN_PASSWORD environment variable in production!")
+            
         db.close()
     except Exception as e:
         print(f"Error ensuring admin exists: {e}")
