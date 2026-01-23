@@ -61,7 +61,58 @@ export default function ToolsPage() {
             );
 
             const text = result.data.text;
-            setInputText(prev => prev + (prev ? "\n" : "") + text);
+
+            // Smart parsing logic for CRM screenshots
+            const lines = text.split('\n');
+            let foundName = "";
+            let foundPhone = "";
+            let foundDesc = [];
+
+            // Regex patterns
+            const phoneRegex = /(?:\+7|8|7)[\s\-]?\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}/;
+            const nameRegex = /([А-ЯЁ][а-яё]+[\s]+[А-ЯЁ][а-яё]+[\s]+[А-ЯЁ][а-яё]+)/;
+
+            for (const line of lines) {
+                const cleanLine = line.trim();
+                if (!cleanLine) continue;
+
+                // Try to find phone
+                if (!foundPhone) {
+                    const phoneMatch = cleanLine.match(phoneRegex);
+                    if (phoneMatch) {
+                        foundPhone = phoneMatch[0];
+                    }
+                }
+
+                // Try to find name (priority to "Сделка по ...")
+                if (!foundName) {
+                    if (cleanLine.includes("Сделка по")) {
+                        const nameMatch = cleanLine.replace("Сделка по", "").trim();
+                        foundName = nameMatch.split(/[^\wа-яёА-ЯЁ\s]/)[0];
+                    } else {
+                        const nameMatch = cleanLine.match(nameRegex);
+                        if (nameMatch) {
+                            foundName = nameMatch[0];
+                        }
+                    }
+                }
+
+                // Collect useful info for description
+                const keywords = ["Бюджет", "Локация", "Тип недвижимости", "Сегмент", "Срок", "Запрос"];
+                if (keywords.some(k => cleanLine.toLowerCase().includes(k.toLowerCase()))) {
+                    foundDesc.push(cleanLine);
+                }
+            }
+
+            // Fallback description
+            if (foundDesc.length === 0) {
+                foundDesc = lines.filter(l => l.length > 30 && !l.includes("Сделка по") && !l.match(phoneRegex)).slice(0, 3);
+            }
+
+            // Format for input: Phone Name Description Date
+            const formattedLine = `${foundPhone || "Нет_телефона"} ${foundName || "Нет_имени"} ${foundDesc.join("; ") || "Нет_описания"} ${new Date().toLocaleDateString('ru-RU')}`;
+
+            setInputText(prev => prev + (prev ? "\n" : "") + formattedLine);
         } catch (error) {
             console.error(error);
             alert("Ошибка распознавания текста");
