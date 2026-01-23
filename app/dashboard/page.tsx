@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import ProtectedLayout from "@/components/ProtectedLayout";
 import api from "@/lib/api";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Cell } from 'recharts';
-import { ArrowUpRight, TrendingUp, MessageCircle, Kanban, Target, Users, Zap, Calendar, Activity, Send, CheckCircle, Clock } from "lucide-react";
+import { ArrowUpRight, TrendingUp, MessageCircle, Kanban, Target, Users, Zap, Calendar, Activity, Send, CheckCircle, Clock, Archive, RotateCcw, Trash2, User } from "lucide-react";
 import KanbanBoard from "@/components/KanbanBoard";
 
 const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e', '#ec4899', '#6366f1'];
@@ -12,19 +12,58 @@ const COLORS = ['#8b5cf6', '#06b6d4', '#10b981', '#f59e0b', '#f43f5e', '#ec4899'
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [connectData, setConnectData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "kanban">("kanban");
+  const [activeTab, setActiveTab] = useState<"overview" | "kanban" | "archive">("kanban");
+  const [archivedLeads, setArchivedLeads] = useState<any[]>([]);
+  const [loadingArchive, setLoadingArchive] = useState(false);
 
   useEffect(() => {
     api.get("/stats").then((res) => setStats(res.data));
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "archive") {
+      fetchArchivedLeads();
+    }
+  }, [activeTab]);
+
+  const fetchArchivedLeads = async () => {
+    setLoadingArchive(true);
+    try {
+      const res = await api.get("/leads?include_archived=true");
+      setArchivedLeads(res.data.filter((l: any) => l.is_archived));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingArchive(false);
+    }
+  };
+
+  const handleRestoreLead = async (leadId: number) => {
+    try {
+      await api.post(`/leads/${leadId}/restore`);
+      fetchArchivedLeads();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteLead = async (leadId: number) => {
+    if (!confirm("Удалить лид НАВСЕГДА?")) return;
+    try {
+      await api.delete(`/leads/${leadId}`);
+      fetchArchivedLeads();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleConnectTelegram = async () => {
-      try {
-          const res = await api.post("/telegram/connect");
-          setConnectData(res.data);
-      } catch (e) {
-          alert("Error generating token");
-      }
+    try {
+      const res = await api.post("/telegram/connect");
+      setConnectData(res.data);
+    } catch (e) {
+      alert("Error generating token");
+    }
   };
 
   if (!stats) return (
@@ -83,22 +122,30 @@ export default function Dashboard() {
           <div className="flex glass-card p-1.5 rounded-xl">
             <button
               onClick={() => setActiveTab("kanban")}
-              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                activeTab === "kanban"
+              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === "kanban"
                   ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/25"
                   : "text-slate-400 hover:text-white"
-              }`}
+                }`}
             >
               <Kanban className="w-4 h-4 mr-2" />
               Канбан
             </button>
             <button
+              onClick={() => setActiveTab("archive")}
+              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === "archive"
+                  ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25"
+                  : "text-slate-400 hover:text-white"
+                }`}
+            >
+              <Archive className="w-4 h-4 mr-2" />
+              Архив
+            </button>
+            <button
               onClick={() => setActiveTab("overview")}
-              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                activeTab === "overview"
+              className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === "overview"
                   ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/25"
                   : "text-slate-400 hover:text-white"
-              }`}
+                }`}
             >
               <Activity className="w-4 h-4 mr-2" />
               Обзор
@@ -108,6 +155,64 @@ export default function Dashboard() {
 
         {activeTab === "kanban" ? (
           <KanbanBoard />
+        ) : activeTab === "archive" ? (
+          <div className="glass-card rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Архивные лиды</h3>
+                <p className="text-sm text-slate-400 mt-1">Лиды, которые были перемещены в архив</p>
+              </div>
+              <div className="text-sm text-slate-400">
+                {archivedLeads.length} лидов в архиве
+              </div>
+            </div>
+            {loadingArchive ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-violet-500 border-t-transparent"></div>
+              </div>
+            ) : archivedLeads.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <Archive className="w-8 h-8 text-slate-600" />
+                </div>
+                <p className="text-slate-500">Архив пуст</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                {archivedLeads.map((lead) => (
+                  <div key={lead.id} className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/20">
+                        <User className="w-5 h-5 text-amber-400" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-white">{lead.full_name || "Без имени"}</div>
+                        <div className="text-sm text-slate-400">
+                          {lead.username ? `@${lead.username.replace(/^@/, '')}` : lead.telegram_id ? `ID: ${lead.telegram_id}` : "no_user"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleRestoreLead(lead.id)}
+                        className="h-9 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 flex items-center gap-2 transition-colors text-sm"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Восстановить
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLead(lead.id)}
+                        className="h-9 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 flex items-center gap-2 transition-colors text-sm"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Удалить
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <>
             {/* Telegram Connect Banner */}
@@ -161,7 +266,7 @@ export default function Dashboard() {
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Total Leads */}
-              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-violet-500/30 transition-all duration-300" style={{"--accent-color": "#8b5cf6"} as React.CSSProperties}>
+              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-violet-500/30 transition-all duration-300" style={{ "--accent-color": "#8b5cf6" } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center border border-violet-500/20 group-hover:scale-110 transition-transform">
                     <Users className="w-5 h-5 text-violet-400" />
@@ -176,7 +281,7 @@ export default function Dashboard() {
               </div>
 
               {/* Interactions */}
-              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-cyan-500/30 transition-all duration-300" style={{"--accent-color": "#06b6d4"} as React.CSSProperties}>
+              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-cyan-500/30 transition-all duration-300" style={{ "--accent-color": "#06b6d4" } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-cyan-500/20 group-hover:scale-110 transition-transform">
                     <Activity className="w-5 h-5 text-cyan-400" />
@@ -187,7 +292,7 @@ export default function Dashboard() {
               </div>
 
               {/* Balance */}
-              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-amber-500/30 transition-all duration-300" style={{"--accent-color": "#f59e0b"} as React.CSSProperties}>
+              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-amber-500/30 transition-all duration-300" style={{ "--accent-color": "#f59e0b" } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/20 group-hover:scale-110 transition-transform">
                     <Zap className="w-5 h-5 text-amber-400" />
@@ -198,16 +303,15 @@ export default function Dashboard() {
               </div>
 
               {/* Conversion */}
-              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-emerald-500/30 transition-all duration-300" style={{"--accent-color": "#10b981"} as React.CSSProperties}>
+              <div className="glass-card stat-card rounded-2xl p-5 group hover:border-emerald-500/30 transition-all duration-300" style={{ "--accent-color": "#10b981" } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform">
                     <Target className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
-                    conversionRate >= 10
+                  <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${conversionRate >= 10
                       ? "text-emerald-400 bg-emerald-500/10"
                       : "text-amber-400 bg-amber-500/10"
-                  }`}>
+                    }`}>
                     {conversionRate >= 10 ? <TrendingUp className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                     {conversionRate >= 10 ? "Отлично" : "В работе"}
                   </div>
@@ -234,8 +338,8 @@ export default function Dashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={funnelData} layout="vertical" margin={{ left: 0, right: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="rgba(255,255,255,0.05)" />
-                      <XAxis type="number" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.5)', fontSize: 12}} />
-                      <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{fill: 'rgba(255,255,255,0.7)', fontSize: 11}} width={100} />
+                      <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }} />
+                      <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 11 }} width={100} />
                       <Tooltip
                         contentStyle={{
                           background: 'rgba(15, 23, 42, 0.95)',
@@ -327,7 +431,7 @@ export default function Dashboard() {
                     <span className="text-slate-500 text-sm pb-1">/ 50</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{width: '48%'}}></div>
+                    <div className="progress-bar-fill" style={{ width: '48%' }}></div>
                   </div>
                   <p className="text-xs text-slate-500 mt-2">48% выполнено</p>
                 </div>
@@ -343,7 +447,7 @@ export default function Dashboard() {
                     <span className="text-slate-500 text-sm pb-1">/ 250</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{width: '67%'}}></div>
+                    <div className="progress-bar-fill" style={{ width: '67%' }}></div>
                   </div>
                   <p className="text-xs text-slate-500 mt-2">67% выполнено</p>
                 </div>
@@ -359,7 +463,7 @@ export default function Dashboard() {
                     <span className="text-slate-500 text-sm pb-1">/ 1000</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{width: '89%'}}></div>
+                    <div className="progress-bar-fill" style={{ width: '89%' }}></div>
                   </div>
                   <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
                     <CheckCircle className="w-3 h-3" />
