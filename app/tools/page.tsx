@@ -283,7 +283,7 @@ export default function ToolsPage() {
                                             <tr>
                                                 <th className="p-3 font-medium w-48">Телефон</th>
                                                 <th className="p-3 font-medium w-72">ФИО</th>
-                                                <th className="p-3 font-medium min-w-[200px]">Запрос</th>
+                                                <th className="p-3 font-medium min-w-[500px]">Запрос</th>
                                                 <th className="p-3 font-medium w-36">Дата</th>
                                                 <th className="p-3 font-medium w-10"></th>
                                             </tr>
