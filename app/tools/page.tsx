@@ -279,23 +279,56 @@ export default function ToolsPage() {
                                     </div>
                                 ) : (
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-white/5 text-slate-400 sticky top-0 backdrop-blur-md">
+                                        <thead className="bg-white/5 text-slate-400 sticky top-0 backdrop-blur-md z-10">
                                             <tr>
-                                                <th className="p-3 font-medium">Телефон</th>
-                                                <th className="p-3 font-medium">ФИО</th>
+                                                <th className="p-3 font-medium w-40">Телефон</th>
+                                                <th className="p-3 font-medium w-48">ФИО</th>
                                                 <th className="p-3 font-medium">Запрос</th>
-                                                <th className="p-3 font-medium">Дата</th>
+                                                <th className="p-3 font-medium w-32">Дата</th>
                                                 <th className="p-3 font-medium w-10"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
                                             {rows.map((row) => (
                                                 <tr key={row.id} className="group hover:bg-white/5 transition-colors">
-                                                    <td className="p-3 text-slate-300 font-mono text-xs">{row.phone}</td>
-                                                    <td className="p-3 text-white font-medium">{row.name}</td>
-                                                    <td className="p-3 text-slate-300 text-xs md:text-sm">{row.request}</td>
-                                                    <td className="p-3 text-slate-400 text-xs whitespace-nowrap">{row.date}</td>
-                                                    <td className="p-3 text-right">
+                                                    <td className="p-2">
+                                                        <input
+                                                            type="text"
+                                                            value={row.phone}
+                                                            onChange={(e) => setRows(rows.map(r => r.id === row.id ? { ...r, phone: e.target.value } : r))}
+                                                            className="w-full bg-transparent border border-transparent focus:border-violet-500/50 rounded px-2 py-1 text-slate-300 font-mono text-xs focus:outline-none focus:bg-white/5 transition-all"
+                                                        />
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <input
+                                                            type="text"
+                                                            value={row.name}
+                                                            onChange={(e) => setRows(rows.map(r => r.id === row.id ? { ...r, name: e.target.value } : r))}
+                                                            className="w-full bg-transparent border border-transparent focus:border-violet-500/50 rounded px-2 py-1 text-white font-medium focus:outline-none focus:bg-white/5 transition-all"
+                                                        />
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <textarea
+                                                            rows={1}
+                                                            value={row.request}
+                                                            onChange={(e) => {
+                                                                setRows(rows.map(r => r.id === row.id ? { ...r, request: e.target.value } : r));
+                                                                e.target.style.height = 'auto';
+                                                                e.target.style.height = e.target.scrollHeight + 'px';
+                                                            }}
+                                                            className="w-full bg-transparent border border-transparent focus:border-violet-500/50 rounded px-2 py-1 text-slate-300 text-xs md:text-sm focus:outline-none focus:bg-white/5 transition-all resize-none overflow-hidden"
+                                                            style={{ minHeight: '32px' }}
+                                                        />
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <input
+                                                            type="text"
+                                                            value={row.date}
+                                                            onChange={(e) => setRows(rows.map(r => r.id === row.id ? { ...r, date: e.target.value } : r))}
+                                                            className="w-full bg-transparent border border-transparent focus:border-violet-500/50 rounded px-2 py-1 text-slate-400 text-xs focus:outline-none focus:bg-white/5 transition-all"
+                                                        />
+                                                    </td>
+                                                    <td className="p-2 text-right">
                                                         <button
                                                             onClick={() => handleDelete(row.id)}
                                                             className="p-1.5 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
