@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { BarChart3, Users, Send, LogOut, LayoutDashboard, Sparkles, Zap, TrendingUp } from "lucide-react";
+import { BarChart3, Users, Send, LogOut, LayoutDashboard, Sparkles, Zap, TrendingUp, FileText, BookOpen } from "lucide-react";
 import Link from "next/link";
 
 export default function Sidebar() {
@@ -13,6 +13,8 @@ export default function Sidebar() {
     { name: "Дашборд", icon: LayoutDashboard, href: "/dashboard", color: "from-violet-500 to-purple-500" },
     { name: "Контакты", icon: Users, href: "/contacts", color: "from-cyan-500 to-blue-500" },
     { name: "Рассылка", icon: Send, href: "/distribution", color: "from-amber-500 to-orange-500" },
+    { name: "Скрипты", icon: FileText, href: "/scripts", color: "from-emerald-500 to-teal-500" },
+    { name: "Материалы", icon: BookOpen, href: "/materials", color: "from-rose-500 to-pink-500" },
   ];
 
   return (
@@ -80,11 +82,10 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`relative flex items-center px-4 py-3.5 text-sm font-medium rounded-xl transition-all duration-300 group ${
-                  isActive
+                className={`relative flex items-center px-4 py-3.5 text-sm font-medium rounded-xl transition-all duration-300 group ${isActive
                     ? "text-white"
                     : "text-slate-400 hover:text-white hover:bg-white/5"
-                }`}
+                  }`}
               >
                 {/* Active Background */}
                 {isActive && (
@@ -96,9 +97,8 @@ export default function Sidebar() {
                   <div className={`absolute inset-0 bg-gradient-to-r ${item.color} rounded-xl blur-xl opacity-40`}></div>
                 )}
 
-                <Icon className={`relative z-10 mr-3 h-5 w-5 transition-all duration-300 ${
-                  isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
-                }`} />
+                <Icon className={`relative z-10 mr-3 h-5 w-5 transition-all duration-300 ${isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
+                  }`} />
                 <span className="relative z-10">{item.name}</span>
 
                 {/* Active Indicator */}
