@@ -283,7 +283,7 @@ export default function ToolsPage() {
                                             <tr>
                                                 <th className="p-3 font-medium w-48">Телефон</th>
                                                 <th className="p-3 font-medium w-72">ФИО</th>
-                                                <th className="p-3 font-medium min-w-[500px]">Запрос</th>
+                                                <th className="p-3 font-medium min-w-[300px]">Запрос</th>
                                                 <th className="p-3 font-medium w-36">Дата</th>
                                                 <th className="p-3 font-medium w-10"></th>
                                             </tr>
@@ -291,7 +291,7 @@ export default function ToolsPage() {
                                         <tbody className="divide-y divide-white/5">
                                             {rows.map((row) => (
                                                 <tr key={row.id} className="group hover:bg-white/5 transition-colors">
-                                                    <td className="p-2">
+                                                    <td className="p-2 align-top">
                                                         <input
                                                             type="text"
                                                             value={row.phone}
@@ -299,7 +299,7 @@ export default function ToolsPage() {
                                                             className="w-full bg-transparent border border-transparent focus:border-violet-500/50 rounded px-2 py-1 text-slate-300 font-mono text-xs focus:outline-none focus:bg-white/5 transition-all"
                                                         />
                                                     </td>
-                                                    <td className="p-2">
+                                                    <td className="p-2 align-top">
                                                         <input
                                                             type="text"
                                                             value={row.name}
@@ -309,18 +309,16 @@ export default function ToolsPage() {
                                                     </td>
                                                     <td className="p-2">
                                                         <textarea
-                                                            rows={1}
+                                                            rows={5}
                                                             value={row.request}
                                                             onChange={(e) => {
                                                                 setRows(rows.map(r => r.id === row.id ? { ...r, request: e.target.value } : r));
-                                                                e.target.style.height = 'auto';
-                                                                e.target.style.height = e.target.scrollHeight + 'px';
                                                             }}
-                                                            className="w-full bg-transparent border border-transparent focus:border-violet-500/50 rounded px-2 py-1 text-slate-300 text-xs md:text-sm focus:outline-none focus:bg-white/5 transition-all resize-none overflow-hidden"
-                                                            style={{ minHeight: '32px' }}
+                                                            className="w-full bg-transparent border border-transparent focus:border-violet-500/50 rounded px-2 py-1 text-slate-300 text-xs md:text-sm focus:outline-none focus:bg-white/5 transition-all resize-y"
+                                                            style={{ minHeight: '100px' }}
                                                         />
                                                     </td>
-                                                    <td className="p-2">
+                                                    <td className="p-2 align-top">
                                                         <input
                                                             type="text"
                                                             value={row.date}
