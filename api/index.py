@@ -225,10 +225,15 @@ def get_leads(
     limit: int = 1000, 
     search: Optional[str] = None, 
     stage: Optional[str] = None,
+    include_archived: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     query = db.query(Lead)
+    
+    # Filter out archived leads by default
+    if not include_archived:
+        query = query.filter(Lead.is_archived == False)
     
     if search:
         query = query.filter(
@@ -281,6 +286,55 @@ def add_interaction(
     
     db.commit()
     return {"status": "success"}
+
+@app.post("/api/leads/{lead_id}/archive")
+def archive_lead(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Archive a lead (soft delete)"""
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    lead.is_archived = True
+    lead.updated_at = datetime.now()
+    db.commit()
+    return {"status": "success", "message": "Lead archived"}
+
+@app.post("/api/leads/{lead_id}/restore")
+def restore_lead(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Restore an archived lead"""
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    lead.is_archived = False
+    lead.updated_at = datetime.now()
+    db.commit()
+    return {"status": "success", "message": "Lead restored"}
+
+@app.delete("/api/leads/{lead_id}")
+def delete_lead(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Permanently delete a lead"""
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    
+    # Delete interactions first
+    db.query(Interaction).filter(Interaction.lead_id == lead_id).delete()
+    db.delete(lead)
+    db.commit()
+    return {"status": "success", "message": "Lead deleted permanently"}
 
 # --- B2B Analytics & Distribution ---
 

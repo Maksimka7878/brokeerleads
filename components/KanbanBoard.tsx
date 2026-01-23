@@ -279,6 +279,7 @@ export default function KanbanBoard() {
           leadId={selectedLeadId}
           isOpen={!!selectedLeadId}
           onClose={() => setSelectedLeadId(null)}
+          onLeadArchived={() => fetchLeads()}
         />
       )}
     </div>

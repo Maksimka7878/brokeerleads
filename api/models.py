@@ -79,6 +79,7 @@ class LeadResponse(LeadBase):
     created_at: datetime
     updated_at: datetime
     next_contact_date: Optional[datetime] = None
+    is_archived: bool = False
     interactions: List[InteractionResponse] = []
 
     class Config:

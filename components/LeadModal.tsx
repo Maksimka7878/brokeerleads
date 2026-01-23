@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
-import { X, Calendar, MessageCircle, User, Phone, AtSign, Clock, Send, FileText, ArrowRight } from "lucide-react";
+import { X, Calendar, MessageCircle, User, Phone, AtSign, Clock, Send, FileText, ArrowRight, Archive, Trash2, RotateCcw } from "lucide-react";
 
 interface LeadModalProps {
   leadId: number;
   isOpen: boolean;
   onClose: () => void;
+  onLeadArchived?: () => void;
 }
 
 const STAGE_COLORS: Record<string, string> = {
@@ -24,11 +25,12 @@ const STAGE_COLORS: Record<string, string> = {
   "Заключен": "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
 };
 
-export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
+export default function LeadModal({ leadId, isOpen, onClose, onLeadArchived }: LeadModalProps) {
   const [lead, setLead] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [note, setNote] = useState("");
   const [sending, setSending] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   useEffect(() => {
     if (isOpen && leadId) {
@@ -65,6 +67,47 @@ export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
       console.error(err);
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!confirm("Архивировать этот лид?")) return;
+    setArchiving(true);
+    try {
+      await api.post(`/leads/${leadId}/archive`);
+      onLeadArchived?.();
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const handleRestore = async () => {
+    setArchiving(true);
+    try {
+      await api.post(`/leads/${leadId}/restore`);
+      fetchLeadDetails();
+      onLeadArchived?.();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Удалить лид НАВСЕГДА? Это действие нельзя отменить!")) return;
+    setArchiving(true);
+    try {
+      await api.delete(`/leads/${leadId}`);
+      onLeadArchived?.();
+      onClose();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -122,12 +165,41 @@ export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
                 )}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="h-10 w-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-400" />
-            </button>
+            <div className="flex items-center gap-2">
+              {lead?.is_archived ? (
+                <button
+                  onClick={handleRestore}
+                  disabled={archiving}
+                  className="h-10 px-3 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 flex items-center gap-2 transition-colors text-sm"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Восстановить
+                </button>
+              ) : (
+                <button
+                  onClick={handleArchive}
+                  disabled={archiving}
+                  className="h-10 px-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 flex items-center gap-2 transition-colors text-sm"
+                >
+                  <Archive className="w-4 h-4" />
+                  В архив
+                </button>
+              )}
+              <button
+                onClick={handleDelete}
+                disabled={archiving}
+                className="h-10 px-3 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 flex items-center gap-2 transition-colors text-sm"
+              >
+                <Trash2 className="w-4 h-4" />
+                Удалить
+              </button>
+              <button
+                onClick={onClose}
+                className="h-10 w-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
           </div>
         </div>
 

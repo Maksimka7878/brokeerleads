@@ -35,6 +35,7 @@ class Lead(Base):
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     next_contact_date = Column(DateTime, nullable=True)
+    is_archived = Column(Boolean, default=False)
 
     interactions = relationship("Interaction", back_populates="lead")
 
