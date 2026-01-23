@@ -68,9 +68,8 @@ function SortableItem({ lead, onClick }: { lead: Lead; onClick: () => void }) {
       {...attributes}
       {...listeners}
       onClick={onClick}
-      className={`lead-card p-4 rounded-xl cursor-grab active:cursor-grabbing group relative ${
-        isDragging ? 'opacity-50 scale-105' : ''
-      }`}
+      className={`lead-card p-4 rounded-xl cursor-grab active:cursor-grabbing group relative ${isDragging ? 'opacity-50 scale-105' : ''
+        }`}
     >
       {/* Drag Handle Indicator */}
       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -86,10 +85,23 @@ function SortableItem({ lead, onClick }: { lead: Lead; onClick: () => void }) {
           <div className="font-medium text-white text-sm truncate pr-6">
             {lead.full_name || "Без имени"}
           </div>
-          <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
-            <AtSign className="w-3 h-3" />
-            <span className="truncate">{lead.username || "no_user"}</span>
-          </div>
+          {lead.username ? (
+            <a
+              href={`https://t.me/${lead.username.replace('@', '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 hover:underline transition-colors mt-0.5"
+            >
+              <AtSign className="w-3 h-3" />
+              <span className="truncate">@{lead.username}</span>
+            </a>
+          ) : (
+            <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
+              <AtSign className="w-3 h-3" />
+              <span className="truncate">no_user</span>
+            </div>
+          )}
         </div>
       </div>
 

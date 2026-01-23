@@ -90,10 +90,23 @@ export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
                 </h2>
                 {!loading && (
                   <div className="flex items-center flex-wrap gap-3 mt-2">
-                    <span className="flex items-center gap-1 text-sm text-cyan-400">
-                      <AtSign className="w-3.5 h-3.5" />
-                      @{lead?.username || "no_user"}
-                    </span>
+                    {lead?.username ? (
+                      <a
+                        href={`https://t.me/${lead.username.replace('@', '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300 hover:underline transition-colors"
+                      >
+                        <AtSign className="w-3.5 h-3.5" />
+                        @{lead.username}
+                      </a>
+                    ) : (
+                      <span className="flex items-center gap-1 text-sm text-slate-400">
+                        <AtSign className="w-3.5 h-3.5" />
+                        no_user
+                      </span>
+                    )}
                     {lead?.phone && (
                       <span className="flex items-center gap-1 text-sm text-slate-400">
                         <Phone className="w-3.5 h-3.5" />
