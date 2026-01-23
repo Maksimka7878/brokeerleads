@@ -88,29 +88,22 @@ function SortableItem({ lead, onClick }: { lead: Lead; onClick: () => void }) {
           </div>
           {lead.username ? (
             <a
-              href={`https://t.me/${lead.username.replace('@', '')}`}
+              href={`https://t.me/${lead.username.replace(/^@/, '')}`}
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 hover:underline transition-colors mt-0.5"
+              className="text-xs text-cyan-400 hover:text-cyan-300 hover:underline transition-colors mt-0.5 truncate"
             >
-              <AtSign className="w-3 h-3" />
-              <span className="truncate">@{lead.username}</span>
+              @{lead.username.replace(/^@/, '')}
             </a>
           ) : lead.telegram_id ? (
-            <a
-              href={`tg://user?id=${lead.telegram_id}`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 hover:underline transition-colors mt-0.5"
-            >
-              <AtSign className="w-3 h-3" />
-              <span className="truncate">ID: {lead.telegram_id}</span>
-            </a>
+            <span className="text-xs text-slate-400 mt-0.5 truncate">
+              ID: {lead.telegram_id}
+            </span>
           ) : (
-            <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
-              <AtSign className="w-3 h-3" />
-              <span className="truncate">no_user</span>
-            </div>
+            <span className="text-xs text-slate-400 mt-0.5">
+              no_user
+            </span>
           )}
         </div>
       </div>
