@@ -1,0 +1,223 @@
+"use client";
+
+import { useState } from "react";
+import ProtectedLayout from "@/components/ProtectedLayout";
+import { Hammer, Download, Trash2, Plus, FileSpreadsheet, Wand2 } from "lucide-react";
+import * as XLSX from 'xlsx';
+
+interface LeadRow {
+    id: number;
+    phone: string;
+    name: string;
+    request: string;
+    date: string;
+}
+
+export default function ToolsPage() {
+    const [inputText, setInputText] = useState("");
+    const [rows, setRows] = useState<LeadRow[]>([]);
+
+    const parseLine = (line: string) => {
+        // Basic heuristics to parse unstructured text
+        // Trying to find date, phone, etc.
+        const parts = line.split(/\s+/);
+        let date = new Date().toLocaleDateString('ru-RU');
+        let phone = "";
+        let nameParts = [];
+        let requestParts = [];
+
+        for (const part of parts) {
+            if (part.match(/\d{2}\.\d{2}\.\d{4}/)) {
+                date = part;
+            } else if (part.match(/[+]?\d{10,}/)) {
+                phone = part;
+            } else if (part.match(/^[А-ЯЁ][а-яё]+$/)) {
+                // Capitalized word -> likely name
+                nameParts.push(part);
+            } else {
+                requestParts.push(part);
+            }
+        }
+
+        return {
+            phone,
+            name: nameParts.join(" "),
+            request: requestParts.join(" "),
+            date
+        };
+    };
+
+    const handleGenerate = () => {
+        if (!inputText.trim()) return;
+
+        const lines = inputText.trim().split('\n');
+        const newRows = lines.map((line, index) => {
+            const parsed = parseLine(line);
+            return {
+                id: Date.now() + index,
+                ...parsed
+            };
+        });
+
+        setRows([...rows, ...newRows]);
+        setInputText("");
+    };
+
+    const handleDownload = () => {
+        const ws = XLSX.utils.json_to_sheet(rows.map(r => ({
+            "Телефон": r.phone,
+            "ФИО": r.name,
+            "Запрос": r.request,
+            "Дата": r.date
+        })));
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Leads");
+
+        // Auto-width columns
+        const wscols = [
+            { wch: 20 }, // Phone
+            { wch: 30 }, // Name
+            { wch: 40 }, // Request
+            { wch: 15 }  // Date
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.writeFile(wb, "Generated_Leads.xlsx");
+    };
+
+    const handleDelete = (id: number) => {
+        setRows(rows.filter(r => r.id !== id));
+    };
+
+    const handleClear = () => {
+        if (confirm("Очистить таблицу?")) {
+            setRows([]);
+        }
+    };
+
+    return (
+        <ProtectedLayout>
+            <div className="space-y-6 animate-fade-in max-w-5xl mx-auto">
+                {/* Header */}
+                <div>
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                        <Hammer className="w-7 h-7 text-cyan-400" />
+                        Инструменты
+                    </h2>
+                    <p className="text-slate-400 text-sm mt-1">
+                        Генератор Excel таблиц из текста
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Input Section */}
+                    <div className="lg:col-span-1 space-y-4">
+                        <div className="glass-card rounded-2xl p-5">
+                            <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+                                <Wand2 className="w-4 h-4 text-violet-400" />
+                                Ввод данных
+                            </h3>
+                            <p className="text-xs text-slate-400 mb-3">
+                                Вставьте строки. Система сама определит телефон, имя и дату.
+                                <br />
+                                Пример: <span className="text-slate-500 italic">89991234567 Иван Иванов Квартира 24.01.2025</span>
+                            </p>
+                            <textarea
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                className="w-full h-48 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 resize-none"
+                                placeholder="Вставьте данные здесь..."
+                            />
+                            <button
+                                onClick={handleGenerate}
+                                disabled={!inputText.trim()}
+                                className="w-full mt-3 btn-primary py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Добавить в таблицу
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Table Preview */}
+                    <div className="lg:col-span-2">
+                        <div className="glass-card rounded-2xl p-5 h-full flex flex-col">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold text-white flex items-center gap-2">
+                                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                                    Предпросмотр таблицы
+                                </h3>
+                                <div className="flex gap-2">
+                                    {rows.length > 0 && (
+                                        <>
+                                            <button
+                                                onClick={handleClear}
+                                                className="px-3 py-1.5 fs-xs rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors text-xs font-medium"
+                                            >
+                                                Очистить
+                                            </button>
+                                            <button
+                                                onClick={handleDownload}
+                                                className="btn-primary py-1.5 px-3 text-xs flex items-center gap-2"
+                                            >
+                                                <Download className="w-3.5 h-3.5" />
+                                                Скачать Excel
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-auto border border-white/10 rounded-xl bg-slate-900/50">
+                                {rows.length === 0 ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-slate-500 p-8">
+                                        <FileSpreadsheet className="w-10 h-10 mb-3 opacity-20" />
+                                        <p className="text-sm">Таблица пуста</p>
+                                        <p className="text-xs opacity-50">Добавьте данные слева</p>
+                                    </div>
+                                ) : (
+                                    <table className="w-full text-left text-sm">
+                                        <thead className="bg-white/5 text-slate-400 sticky top-0 backdrop-blur-md">
+                                            <tr>
+                                                <th className="p-3 font-medium">Телефон</th>
+                                                <th className="p-3 font-medium">ФИО</th>
+                                                <th className="p-3 font-medium">Запрос</th>
+                                                <th className="p-3 font-medium">Дата</th>
+                                                <th className="p-3 font-medium w-10"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                            {rows.map((row) => (
+                                                <tr key={row.id} className="group hover:bg-white/5 transition-colors">
+                                                    <td className="p-3 text-slate-300 font-mono text-xs">{row.phone}</td>
+                                                    <td className="p-3 text-white font-medium">{row.name}</td>
+                                                    <td className="p-3 text-slate-300 text-xs md:text-sm">{row.request}</td>
+                                                    <td className="p-3 text-slate-400 text-xs whitespace-nowrap">{row.date}</td>
+                                                    <td className="p-3 text-right">
+                                                        <button
+                                                            onClick={() => handleDelete(row.id)}
+                                                            className="p-1.5 hover:bg-rose-500/10 text-slate-500 hover:text-rose-400 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+
+                            {rows.length > 0 && (
+                                <div className="mt-3 text-xs text-slate-500 text-right">
+                                    Всего записей: {rows.length}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ProtectedLayout>
+    );
+}

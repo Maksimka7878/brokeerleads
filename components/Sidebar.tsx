@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { BarChart3, Users, Send, LogOut, LayoutDashboard, Sparkles, Zap, TrendingUp, FileText, BookOpen } from "lucide-react";
+import { BarChart3, Users, Send, LogOut, LayoutDashboard, Sparkles, Zap, TrendingUp, FileText, BookOpen, Hammer } from "lucide-react";
 import Link from "next/link";
 
 export default function Sidebar() {
@@ -15,6 +15,7 @@ export default function Sidebar() {
     { name: "Рассылка", icon: Send, href: "/distribution", color: "from-amber-500 to-orange-500" },
     { name: "Скрипты", icon: FileText, href: "/scripts", color: "from-emerald-500 to-teal-500" },
     { name: "Материалы", icon: BookOpen, href: "/materials", color: "from-rose-500 to-pink-500" },
+    { name: "Инструменты", icon: Hammer, href: "/tools", color: "from-cyan-500 to-sky-500" },
   ];
 
   return (
@@ -83,8 +84,8 @@ export default function Sidebar() {
                 key={item.name}
                 href={item.href}
                 className={`relative flex items-center px-4 py-3.5 text-sm font-medium rounded-xl transition-all duration-300 group ${isActive
-                    ? "text-white"
-                    : "text-slate-400 hover:text-white hover:bg-white/5"
+                  ? "text-white"
+                  : "text-slate-400 hover:text-white hover:bg-white/5"
                   }`}
               >
                 {/* Active Background */}
