@@ -173,7 +173,7 @@ export default function ToolsPage() {
 
     return (
         <ProtectedLayout>
-            <div className="space-y-6 animate-fade-in max-w-5xl mx-auto">
+            <div className="space-y-6 animate-fade-in w-full px-6 h-[calc(100vh-2rem)] flex flex-col">
                 {/* Header */}
                 <div>
                     <h2 className="text-2xl font-bold text-white flex items-center gap-3">
@@ -185,10 +185,10 @@ export default function ToolsPage() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
                     {/* Input Section */}
-                    <div className="lg:col-span-1 space-y-4">
-                        <div className="glass-card rounded-2xl p-5">
+                    <div className="lg:col-span-1 space-y-4 flex flex-col h-full">
+                        <div className="glass-card rounded-2xl p-5 flex flex-col h-full">
                             <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
                                 <Wand2 className="w-4 h-4 text-violet-400" />
                                 Ввод данных
@@ -227,7 +227,7 @@ export default function ToolsPage() {
                             <textarea
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="w-full h-48 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 resize-none"
+                                className="w-full flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-violet-500/50 resize-none min-h-[200px]"
                                 placeholder="Вставьте данные здесь..."
                             />
                             <button
@@ -242,7 +242,7 @@ export default function ToolsPage() {
                     </div>
 
                     {/* Table Preview */}
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-3 h-full min-h-0">
                         <div className="glass-card rounded-2xl p-5 h-full flex flex-col">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="font-semibold text-white flex items-center gap-2">
@@ -281,10 +281,10 @@ export default function ToolsPage() {
                                     <table className="w-full text-left text-sm">
                                         <thead className="bg-white/5 text-slate-400 sticky top-0 backdrop-blur-md z-10">
                                             <tr>
-                                                <th className="p-3 font-medium w-40">Телефон</th>
-                                                <th className="p-3 font-medium w-48">ФИО</th>
-                                                <th className="p-3 font-medium">Запрос</th>
-                                                <th className="p-3 font-medium w-32">Дата</th>
+                                                <th className="p-3 font-medium w-48">Телефон</th>
+                                                <th className="p-3 font-medium w-72">ФИО</th>
+                                                <th className="p-3 font-medium min-w-[200px]">Запрос</th>
+                                                <th className="p-3 font-medium w-36">Дата</th>
                                                 <th className="p-3 font-medium w-10"></th>
                                             </tr>
                                         </thead>
