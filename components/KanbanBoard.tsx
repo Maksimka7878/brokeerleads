@@ -42,6 +42,7 @@ interface Lead {
   username: string;
   phone: string;
   stage: string;
+  telegram_id: number | null;
 }
 
 function SortableItem({ lead, onClick }: { lead: Lead; onClick: () => void }) {
@@ -95,6 +96,15 @@ function SortableItem({ lead, onClick }: { lead: Lead; onClick: () => void }) {
             >
               <AtSign className="w-3 h-3" />
               <span className="truncate">@{lead.username}</span>
+            </a>
+          ) : lead.telegram_id ? (
+            <a
+              href={`tg://user?id=${lead.telegram_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 hover:underline transition-colors mt-0.5"
+            >
+              <AtSign className="w-3 h-3" />
+              <span className="truncate">ID: {lead.telegram_id}</span>
             </a>
           ) : (
             <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">

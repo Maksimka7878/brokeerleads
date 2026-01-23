@@ -101,6 +101,15 @@ export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
                         <AtSign className="w-3.5 h-3.5" />
                         @{lead.username}
                       </a>
+                    ) : lead?.telegram_id ? (
+                      <a
+                        href={`tg://user?id=${lead.telegram_id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-sm text-cyan-400 hover:text-cyan-300 hover:underline transition-colors"
+                      >
+                        <AtSign className="w-3.5 h-3.5" />
+                        ID: {lead.telegram_id}
+                      </a>
                     ) : (
                       <span className="flex items-center gap-1 text-sm text-slate-400">
                         <AtSign className="w-3.5 h-3.5" />
@@ -201,11 +210,10 @@ export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
                 {lead?.interactions?.map((interaction: any) => (
                   <div key={interaction.id} className="flex gap-3 group">
                     <div className="flex-shrink-0">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                        interaction.contact_method === "Move Stage"
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${interaction.contact_method === "Move Stage"
                           ? "bg-violet-500/20 border border-violet-500/20"
                           : "bg-cyan-500/20 border border-cyan-500/20"
-                      }`}>
+                        }`}>
                         {interaction.contact_method === "Move Stage" ? (
                           <ArrowRight className="w-4 h-4 text-violet-400" />
                         ) : (
@@ -215,9 +223,8 @@ export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
                     </div>
                     <div className="flex-1 bg-white/5 rounded-xl p-3 border border-white/5 group-hover:border-white/10 transition-colors">
                       <div className="flex justify-between items-start mb-1.5">
-                        <span className={`font-medium text-sm ${
-                          interaction.contact_method === "Move Stage" ? "text-violet-400" : "text-white"
-                        }`}>
+                        <span className={`font-medium text-sm ${interaction.contact_method === "Move Stage" ? "text-violet-400" : "text-white"
+                          }`}>
                           {interaction.contact_method}
                         </span>
                         <span className="text-xs text-slate-500 flex items-center gap-1">
@@ -243,11 +250,10 @@ export default function LeadModal({ leadId, isOpen, onClose }: LeadModalProps) {
                   <button
                     type="submit"
                     disabled={!note.trim() || sending}
-                    className={`absolute bottom-3 right-3 px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${
-                      !note.trim() || sending
+                    className={`absolute bottom-3 right-3 px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 transition-all ${!note.trim() || sending
                         ? "bg-slate-700 text-slate-500 cursor-not-allowed"
                         : "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
-                    }`}
+                      }`}
                   >
                     {sending ? (
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
