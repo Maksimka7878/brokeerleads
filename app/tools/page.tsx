@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import ProtectedLayout from "@/components/ProtectedLayout";
-import { Hammer, Download, Trash2, Plus, FileSpreadsheet, Wand2 } from "lucide-react";
+import { Hammer, Download, Trash2, Plus, FileSpreadsheet, Wand2, Image as ImageIcon, Loader2 } from "lucide-react";
 import * as XLSX from 'xlsx';
+import Tesseract from 'tesseract.js';
 
 interface LeadRow {
     id: number;
@@ -16,10 +17,11 @@ interface LeadRow {
 export default function ToolsPage() {
     const [inputText, setInputText] = useState("");
     const [rows, setRows] = useState<LeadRow[]>([]);
+    const [isRecognizing, setIsRecognizing] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const parseLine = (line: string) => {
         // Basic heuristics to parse unstructured text
-        // Trying to find date, phone, etc.
         const parts = line.split(/\s+/);
         let date = new Date().toLocaleDateString('ru-RU');
         let phone = "";
@@ -32,7 +34,6 @@ export default function ToolsPage() {
             } else if (part.match(/[+]?\d{10,}/)) {
                 phone = part;
             } else if (part.match(/^[А-ЯЁ][а-яё]+$/)) {
-                // Capitalized word -> likely name
                 nameParts.push(part);
             } else {
                 requestParts.push(part);
@@ -47,17 +48,41 @@ export default function ToolsPage() {
         };
     };
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsRecognizing(true);
+        try {
+            const result = await Tesseract.recognize(
+                file,
+                'rus',
+                { logger: m => console.log(m) }
+            );
+
+            const text = result.data.text;
+            setInputText(prev => prev + (prev ? "\n" : "") + text);
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка распознавания текста");
+        } finally {
+            setIsRecognizing(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
     const handleGenerate = () => {
         if (!inputText.trim()) return;
 
         const lines = inputText.trim().split('\n');
         const newRows = lines.map((line, index) => {
             const parsed = parseLine(line);
+            if (!parsed.phone && !parsed.name && !parsed.request) return null;
             return {
                 id: Date.now() + index,
                 ...parsed
             };
-        });
+        }).filter(Boolean) as LeadRow[];
 
         setRows([...rows, ...newRows]);
         setInputText("");
@@ -74,7 +99,6 @@ export default function ToolsPage() {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Leads");
 
-        // Auto-width columns
         const wscols = [
             { wch: 20 }, // Phone
             { wch: 30 }, // Name
@@ -106,7 +130,7 @@ export default function ToolsPage() {
                         Инструменты
                     </h2>
                     <p className="text-slate-400 text-sm mt-1">
-                        Генератор Excel таблиц из текста
+                        Генератор Excel таблиц из текста и фото
                     </p>
                 </div>
 
@@ -119,10 +143,36 @@ export default function ToolsPage() {
                                 Ввод данных
                             </h3>
                             <p className="text-xs text-slate-400 mb-3">
-                                Вставьте строки. Система сама определит телефон, имя и дату.
-                                <br />
-                                Пример: <span className="text-slate-500 italic">89991234567 Иван Иванов Квартира 24.01.2025</span>
+                                Вставьте текст или загрузите фото списка/таблицы.
+                                Система распознает текст и добавит его в поле ввода.
                             </p>
+
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                className="hidden"
+                                accept="image/*"
+                            />
+
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isRecognizing}
+                                className="w-full mb-3 py-2.5 rounded-xl border border-dashed border-white/20 hover:border-violet-500/50 hover:bg-white/5 transition-all text-sm text-slate-400 hover:text-white flex items-center justify-center gap-2"
+                            >
+                                {isRecognizing ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Распознаем...
+                                    </>
+                                ) : (
+                                    <>
+                                        <ImageIcon className="w-4 h-4" />
+                                        Загрузить фото
+                                    </>
+                                )}
+                            </button>
+
                             <textarea
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
