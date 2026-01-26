@@ -21,6 +21,18 @@ class User(Base):
     
     transactions = relationship("LeadTransaction", back_populates="user")
 
+class LeadBatch(Base):
+    __tablename__ = 'lead_batches'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    file_name = Column(String, nullable=True)
+    imported_at = Column(DateTime, default=datetime.now)
+    count = Column(Integer, default=0)
+
+    leads = relationship("Lead", back_populates="batch")
+
 class Lead(Base):
     __tablename__ = 'leads'
 
@@ -36,8 +48,10 @@ class Lead(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     next_contact_date = Column(DateTime, nullable=True)
     is_archived = Column(Boolean, default=False)
+    batch_id = Column(Integer, ForeignKey('lead_batches.id'), nullable=True)
 
     interactions = relationship("Interaction", back_populates="lead")
+    batch = relationship("LeadBatch", back_populates="leads")
 
 class Interaction(Base):
     __tablename__ = 'interactions'

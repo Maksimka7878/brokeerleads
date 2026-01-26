@@ -9,6 +9,7 @@ interface User {
   username: string;
   role: string;
   balance: number;
+  leadsCount?: number;
 }
 
 interface AuthContextType {
@@ -21,10 +22,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: () => {},
-  logout: () => {},
+  login: () => { },
+  logout: () => { },
   loading: true,
-  refreshUser: async () => {},
+  refreshUser: async () => { },
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -43,8 +44,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUser = async () => {
     try {
-      const res = await api.get("/users/me");
-      setUser(res.data);
+      const [userRes, leadsRes] = await Promise.all([
+        api.get("/users/me"),
+        api.get("/leads/count")
+      ]);
+      setUser({
+        ...userRes.data,
+        leadsCount: leadsRes.data.count
+      });
     } catch (err) {
       localStorage.removeItem("token");
       setUser(null);

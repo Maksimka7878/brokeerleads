@@ -13,11 +13,11 @@ import re
 from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-from .database import get_db, init_db, Lead, Interaction, User, LeadTransaction, SessionLocal
+from .database import get_db, init_db, Lead, Interaction, User, LeadTransaction, LeadBatch, SessionLocal
 from .models import (
     LeadCreate, LeadResponse, InteractionCreate, StatsResponse, 
     UserCreate, UserResponse, Token, TransactionCreate, TransactionResponse,
-    ConnectTelegramResponse
+    ConnectTelegramResponse, LeadBatchCreate, LeadBatchResponse
 )
 from .auth import verify_password, get_password_hash, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES, validate_password
 
@@ -248,6 +248,15 @@ def get_leads(
     leads = query.offset(skip).limit(limit).all()
     return leads
 
+@app.get("/api/leads/count")
+def get_leads_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Returns total count of non-archived leads (client leads)."""
+    count = db.query(Lead).filter(Lead.is_archived == False).count()
+    return {"count": count}
+
 @app.get("/api/leads/{lead_id}", response_model=LeadResponse)
 def get_lead_details(
     lead_id: int,
@@ -341,9 +350,10 @@ def delete_lead(
 @app.get("/api/stats", response_model=StatsResponse)
 def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     total_leads = db.query(Lead).count()
+    active_leads = db.query(Lead).filter(Lead.is_archived == False).count()
     total_interactions = db.query(Interaction).count()
     
-    stages = db.query(Lead.stage).all()
+    stages = db.query(Lead.stage).filter(Lead.is_archived == False).all()
     stage_counts = {}
     for (stage,) in stages:
         stage_counts[stage] = stage_counts.get(stage, 0) + 1
@@ -352,7 +362,7 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     transactions = db.query(LeadTransaction).filter(LeadTransaction.user_id == current_user.id).order_by(LeadTransaction.timestamp.desc()).limit(10).all()
         
     return StatsResponse(
-        total_leads=total_leads,
+        total_leads=active_leads,
         total_interactions=total_interactions,
         leads_by_stage=stage_counts,
         user_balance=current_user.balance,
@@ -407,12 +417,24 @@ async def distribute_leads(
 @app.post("/api/import")
 async def import_leads(
     file: UploadFile = File(...), 
+    batch_name: Optional[str] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     contents = await file.read()
     try:
         df = pd.read_excel(io.BytesIO(contents))
+        
+        # Create a LeadBatch record
+        batch = LeadBatch(
+            name=batch_name or f"Импорт {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+            file_name=file.filename,
+            imported_at=datetime.now(),
+            count=0
+        )
+        db.add(batch)
+        db.flush()  # Get the batch ID
+        
         count = 0
         for index, row in df.iterrows():
             # Handle float/int ID correctly
@@ -460,15 +482,66 @@ async def import_leads(
                 full_name=str(row.get('Полное имя')) if pd.notna(row.get('Полное имя')) else None,
                 username=str(row.get('Юзернейм')) if pd.notna(row.get('Юзернейм')) else None,
                 bio=str(row.get('Описание профиля')) if pd.notna(row.get('Описание профиля')) else None,
-                stage="Новый"
+                stage="Новый",
+                batch_id=batch.id
             )
             db.add(lead)
             count += 1
-            
+        
+        # Update batch count
+        batch.count = count
         db.commit()
-        return {"status": "success", "imported_count": count}
+        return {"status": "success", "imported_count": count, "batch_id": batch.id}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# --- Lead Batches Endpoints ---
+
+@app.get("/api/batches", response_model=List[LeadBatchResponse])
+def get_batches(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List all import batches"""
+    batches = db.query(LeadBatch).order_by(LeadBatch.imported_at.desc()).all()
+    return batches
+
+@app.get("/api/batches/{batch_id}", response_model=LeadBatchResponse)
+def get_batch(
+    batch_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific batch"""
+    batch = db.query(LeadBatch).filter(LeadBatch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    return batch
+
+@app.delete("/api/batches/{batch_id}")
+def delete_batch(
+    batch_id: int,
+    delete_leads: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a batch. Optionally delete associated leads."""
+    batch = db.query(LeadBatch).filter(LeadBatch.id == batch_id).first()
+    if not batch:
+        raise HTTPException(status_code=404, detail="Batch not found")
+    
+    if delete_leads:
+        # Delete interactions first
+        lead_ids = [l.id for l in batch.leads]
+        db.query(Interaction).filter(Interaction.lead_id.in_(lead_ids)).delete(synchronize_session=False)
+        db.query(Lead).filter(Lead.batch_id == batch_id).delete(synchronize_session=False)
+    else:
+        # Just unlink leads from batch
+        db.query(Lead).filter(Lead.batch_id == batch_id).update({"batch_id": None})
+    
+    db.delete(batch)
+    db.commit()
+    return {"status": "success", "message": "Batch deleted"}
 
 # --- Telegram Webhook & Integration ---
 

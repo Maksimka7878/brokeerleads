@@ -123,8 +123,8 @@ export default function Dashboard() {
             <button
               onClick={() => setActiveTab("kanban")}
               className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === "kanban"
-                  ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/25"
-                  : "text-slate-400 hover:text-white"
+                ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/25"
+                : "text-slate-400 hover:text-white"
                 }`}
             >
               <Kanban className="w-4 h-4 mr-2" />
@@ -133,8 +133,8 @@ export default function Dashboard() {
             <button
               onClick={() => setActiveTab("archive")}
               className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === "archive"
-                  ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25"
-                  : "text-slate-400 hover:text-white"
+                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/25"
+                : "text-slate-400 hover:text-white"
                 }`}
             >
               <Archive className="w-4 h-4 mr-2" />
@@ -143,8 +143,8 @@ export default function Dashboard() {
             <button
               onClick={() => setActiveTab("overview")}
               className={`flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === "overview"
-                  ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/25"
-                  : "text-slate-400 hover:text-white"
+                ? "bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-lg shadow-violet-500/25"
+                : "text-slate-400 hover:text-white"
                 }`}
             >
               <Activity className="w-4 h-4 mr-2" />
@@ -291,15 +291,15 @@ export default function Dashboard() {
                 <div className="text-sm text-slate-400">Взаимодействий</div>
               </div>
 
-              {/* Balance */}
+              {/* Clients Count */}
               <div className="glass-card stat-card rounded-2xl p-5 group hover:border-amber-500/30 transition-all duration-300" style={{ "--accent-color": "#f59e0b" } as React.CSSProperties}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center border border-amber-500/20 group-hover:scale-110 transition-transform">
-                    <Zap className="w-5 h-5 text-amber-400" />
+                    <Users className="w-5 h-5 text-amber-400" />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-white mb-1">{stats.user_balance}</div>
-                <div className="text-sm text-slate-400">Баланс лидов</div>
+                <div className="text-3xl font-bold text-white mb-1">{stats.total_leads}</div>
+                <div className="text-sm text-slate-400">Всего клиентов</div>
               </div>
 
               {/* Conversion */}
@@ -309,8 +309,8 @@ export default function Dashboard() {
                     <Target className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${conversionRate >= 10
-                      ? "text-emerald-400 bg-emerald-500/10"
-                      : "text-amber-400 bg-amber-500/10"
+                    ? "text-emerald-400 bg-emerald-500/10"
+                    : "text-amber-400 bg-amber-500/10"
                     }`}>
                     {conversionRate >= 10 ? <TrendingUp className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
                     {conversionRate >= 10 ? "Отлично" : "В работе"}

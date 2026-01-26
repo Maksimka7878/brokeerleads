@@ -2,18 +2,39 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
-import { BarChart3, Users, Send, LogOut, LayoutDashboard, Sparkles, Zap, TrendingUp, FileText, BookOpen, Hammer } from "lucide-react";
+import { BarChart3, Users, Send, LogOut, LayoutDashboard, Sparkles, Zap, TrendingUp, FileText, BookOpen, Hammer, Package } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const [leadCount, setLeadCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchLeadCount = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/leads/count", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLeadCount(data.count);
+        }
+      } catch (err) {
+        console.error("Failed to fetch lead count", err);
+      }
+    };
+    fetchLeadCount();
+  }, []);
 
   const menuItems = [
     { name: "Дашборд", icon: LayoutDashboard, href: "/dashboard", color: "from-violet-500 to-purple-500" },
     { name: "Контакты", icon: Users, href: "/contacts", color: "from-cyan-500 to-blue-500" },
+    { name: "Учет", icon: Package, href: "/accounting", color: "from-emerald-500 to-teal-500" },
     { name: "Рассылка", icon: Send, href: "/distribution", color: "from-amber-500 to-orange-500" },
-    { name: "Скрипты", icon: FileText, href: "/scripts", color: "from-emerald-500 to-teal-500" },
+    { name: "Скрипты", icon: FileText, href: "/scripts", color: "from-sky-500 to-indigo-500" },
     { name: "Материалы", icon: BookOpen, href: "/materials", color: "from-rose-500 to-pink-500" },
     { name: "Инструменты", icon: Hammer, href: "/tools", color: "from-cyan-500 to-sky-500" },
   ];
@@ -55,13 +76,15 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* Balance Card */}
+          {/* Leads Card */}
           <div className="relative z-10 bg-gradient-to-r from-slate-800/50 to-slate-800/30 rounded-xl p-3 border border-white/5">
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Баланс лидов</span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Всего клиентов</span>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-2xl font-bold text-white">{user?.balance}</span>
+                  <span className="text-2xl font-bold text-white">
+                    {leadCount !== null ? leadCount : "..."}
+                  </span>
                   <Zap className="w-4 h-4 text-amber-400" />
                 </div>
               </div>

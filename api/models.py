@@ -80,7 +80,24 @@ class LeadResponse(LeadBase):
     updated_at: datetime
     next_contact_date: Optional[datetime] = None
     is_archived: bool = False
+    batch_id: Optional[int] = None
     interactions: List[InteractionResponse] = []
+
+    class Config:
+        from_attributes = True
+
+# Lead Batch Models
+class LeadBatchCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class LeadBatchResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    file_name: Optional[str] = None
+    imported_at: datetime
+    count: int
 
     class Config:
         from_attributes = True
