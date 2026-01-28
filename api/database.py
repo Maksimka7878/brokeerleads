@@ -78,13 +78,11 @@ class LeadTransaction(Base):
 
 # Database setup
 DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./crm.db")
 
-if not DATABASE_URL:
-    # On Vercel, use /tmp for SQLite (read-only file system elsewhere)
-    if os.environ.get("VERCEL"):
-         DATABASE_URL = "sqlite:////tmp/crm.db"
-    else:
-         DATABASE_URL = "sqlite:///./crm.db"
+# On Vercel, use /tmp for SQLite (read-only file system elsewhere)
+if os.environ.get("VERCEL") and DATABASE_URL.startswith("sqlite:///./crm.db"):
+    DATABASE_URL = "sqlite:////tmp/crm.db"
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
