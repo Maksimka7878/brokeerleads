@@ -282,8 +282,13 @@ def get_leads_count(
     current_user: User = Depends(get_current_user)
 ):
     """Returns total count of non-archived leads (client leads)."""
-    count = db.query(Lead).filter(Lead.is_archived == False).count()
-    return {"count": count}
+    try:
+        count = db.query(Lead).filter(Lead.is_archived == False).count()
+        return {"count": count}
+    except Exception as e:
+        print(f"[DEBUG] Error counting leads: {e}")
+        # If table doesn't exist or other error, return 0
+        return {"count": 0}
 
 @app.get("/api/leads/{lead_id}", response_model=LeadResponse)
 def get_lead_details(
@@ -377,18 +382,26 @@ def delete_lead(
 
 @app.get("/api/stats", response_model=StatsResponse)
 def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    total_leads = db.query(Lead).count()
-    active_leads = db.query(Lead).filter(Lead.is_archived == False).count()
-    total_interactions = db.query(Interaction).count()
-    
-    stages = db.query(Lead.stage).filter(Lead.is_archived == False).all()
-    stage_counts = {}
-    for (stage,) in stages:
-        stage_counts[stage] = stage_counts.get(stage, 0) + 1
-    
-    # Recent transactions for this user
-    transactions = db.query(LeadTransaction).filter(LeadTransaction.user_id == current_user.id).order_by(LeadTransaction.timestamp.desc()).limit(10).all()
-        
+    try:
+        total_leads = db.query(Lead).count()
+        active_leads = db.query(Lead).filter(Lead.is_archived == False).count()
+        total_interactions = db.query(Interaction).count()
+
+        stages = db.query(Lead.stage).filter(Lead.is_archived == False).all()
+        stage_counts = {}
+        for (stage,) in stages:
+            stage_counts[stage] = stage_counts.get(stage, 0) + 1
+
+        # Recent transactions for this user
+        transactions = db.query(LeadTransaction).filter(LeadTransaction.user_id == current_user.id).order_by(LeadTransaction.timestamp.desc()).limit(10).all()
+    except Exception as e:
+        print(f"[DEBUG] Error fetching stats: {e}")
+        # Return empty stats if tables don't exist
+        active_leads = 0
+        total_interactions = 0
+        stage_counts = {}
+        transactions = []
+
     return StatsResponse(
         total_leads=active_leads,
         total_interactions=total_interactions,
