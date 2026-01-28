@@ -298,9 +298,9 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 @app.get("/api/leads", response_model=List[LeadResponse])
 def get_leads(
-    skip: int = 0, 
-    limit: int = 1000, 
-    search: Optional[str] = None, 
+    skip: int = 0,
+    limit: int = 100000,
+    search: Optional[str] = None,
     stage: Optional[str] = None,
     include_archived: bool = False,
     db: Session = Depends(get_db),

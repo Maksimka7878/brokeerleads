@@ -166,7 +166,7 @@ export default function KanbanBoard() {
 
   const fetchLeads = async () => {
     try {
-      const res = await api.get("/leads?limit=1000");
+      const res = await api.get("/leads");
       setLeads(res.data);
     } catch (err) {
       console.error("Failed to fetch leads", err);
