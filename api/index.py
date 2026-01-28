@@ -117,11 +117,16 @@ def ensure_admin_exists():
         db = SessionLocal()
         # Use environment variable for admin password, or generate a secure default
         admin_password = os.getenv("ADMIN_PASSWORD", "Admin@2024Secure!Password")
-        
+
+        # Debug logging
+        has_env_password = "ADMIN_PASSWORD" in os.environ
+        print(f"[DEBUG] ADMIN_PASSWORD env var present: {has_env_password}")
+        print(f"[DEBUG] Using {'custom' if has_env_password else 'default'} password")
+
         user = db.query(User).filter(User.username == "admin").first()
-        
+
         if not user:
-            print("Creating default admin user...")
+            print("[DEBUG] Creating default admin user...")
             admin = User(
                 username="admin",
                 hashed_password=get_password_hash(admin_password),
@@ -130,16 +135,21 @@ def ensure_admin_exists():
             )
             db.add(admin)
             db.commit()
+            print("[DEBUG] Admin user created successfully")
         else:
+            print("[DEBUG] Admin user exists, checking password...")
             # Check if password needs update
             if not verify_password(admin_password, user.hashed_password):
-                print("Updating admin password from environment variable...")
+                print("[DEBUG] Password mismatch - updating admin password from environment variable...")
                 user.hashed_password = get_password_hash(admin_password)
                 db.commit()
-                
+                print("[DEBUG] Admin password updated successfully")
+            else:
+                print("[DEBUG] Admin password matches environment variable")
+
         if admin_password == "Admin@2024Secure!Password":
             print("WARNING: Using default admin password. Set ADMIN_PASSWORD environment variable in production!")
-            
+
         db.close()
     except Exception as e:
         print(f"Error ensuring admin exists: {e}")
@@ -152,6 +162,8 @@ async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
+    print(f"[DEBUG] Login attempt for username: {form_data.username}")
+
     # Get client IP address
     client_ip = request.client.host if request.client else "unknown"
 
@@ -163,13 +175,28 @@ async def login_for_access_token(
         )
 
     user = db.query(User).filter(User.username == form_data.username).first()
+    print(f"[DEBUG] User found in database: {user is not None}")
 
     # Lazy admin creation: if admin not found, try to create him (handling Vercel cold starts)
     if not user and form_data.username == "admin":
+        print("[DEBUG] Admin not found, calling ensure_admin_exists...")
         ensure_admin_exists()
         user = db.query(User).filter(User.username == "admin").first()
+        print(f"[DEBUG] Admin user after ensure: {user is not None}")
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user:
+        print("[DEBUG] User not found after all attempts")
+        record_login_attempt(client_ip, success=False)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    password_valid = verify_password(form_data.password, user.hashed_password)
+    print(f"[DEBUG] Password verification result: {password_valid}")
+
+    if not password_valid:
         record_login_attempt(client_ip, success=False)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -178,6 +205,7 @@ async def login_for_access_token(
         )
 
     # Successful login - record attempt
+    print(f"[DEBUG] Login successful for user: {user.username}")
     record_login_attempt(client_ip, success=True)
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
