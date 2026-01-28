@@ -14,18 +14,18 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (token: string) => void;
+  login: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: () => { },
+  login: async () => { },
   logout: () => { },
   loading: true,
-  refreshUser: async () => { },
+  refreshUser: async () => false,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -52,18 +52,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         ...userRes.data,
         leadsCount: leadsRes.data.count
       });
+      return true;
     } catch (err) {
+      console.error("Failed to fetch user:", err);
       localStorage.removeItem("token");
       setUser(null);
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const login = (token: string) => {
+  const login = async (token: string) => {
+    console.log("Login: saving token");
     localStorage.setItem("token", token);
-    fetchUser();
-    router.push("/dashboard");
+    setLoading(true);
+    console.log("Login: fetching user data");
+    const success = await fetchUser();
+    console.log("Login: fetchUser result:", success);
+    if (success) {
+      console.log("Login: redirecting to dashboard");
+      router.push("/dashboard");
+    } else {
+      console.error("Login: failed to fetch user data");
+      throw new Error("Failed to fetch user data");
+    }
   };
 
   const logout = () => {

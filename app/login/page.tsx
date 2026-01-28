@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { Lock, User, Loader2, ArrowRight } from "lucide-react";
 
@@ -11,22 +11,33 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      console.log("Already logged in, redirecting to dashboard");
+      router.push("/dashboard");
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-    
+
     try {
       const formData = new FormData();
       formData.append("username", username);
       formData.append("password", password);
-      
+
+      console.log("Submitting login form");
       const res = await api.post("/token", formData);
-      login(res.data.access_token);
+      console.log("Token received, calling login");
+      await login(res.data.access_token);
+      console.log("Login completed successfully");
     } catch (err) {
+      console.error("Login error:", err);
       setError("Неверное имя пользователя или пароль");
       setIsLoading(false);
     }
