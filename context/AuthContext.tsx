@@ -60,9 +60,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const login = (token: string) => {
+  const login = async (token: string) => {
     localStorage.setItem("token", token);
-    fetchUser();
+    await fetchUser();
     router.push("/dashboard");
   };
 
