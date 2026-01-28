@@ -14,18 +14,18 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (token: string) => void;
+  login: (token: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: () => { },
+  login: async () => { },
   logout: () => { },
   loading: true,
-  refreshUser: async () => { },
+  refreshUser: async () => null,
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -42,28 +42,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  const fetchUser = async () => {
+  const fetchUser = async (): Promise<User | null> => {
     try {
       const [userRes, leadsRes] = await Promise.all([
         api.get("/users/me"),
         api.get("/leads/count")
       ]);
-      setUser({
+      const userData = {
         ...userRes.data,
         leadsCount: leadsRes.data.count
-      });
+      };
+      setUser(userData);
+      return userData;
     } catch (err) {
+      console.error("fetchUser error:", err);
       localStorage.removeItem("token");
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (token: string) => {
+  const login = async (token: string): Promise<void> => {
+    console.log("AuthContext login called with token");
     localStorage.setItem("token", token);
-    await fetchUser();
-    router.push("/dashboard");
+    setLoading(true);
+    const userData = await fetchUser();
+    console.log("User data after fetchUser:", userData);
+    if (userData) {
+      console.log("Redirecting to dashboard...");
+      router.push("/dashboard");
+    } else {
+      console.error("Login failed - no user data returned");
+    }
   };
 
   const logout = () => {
@@ -80,3 +92,4 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
