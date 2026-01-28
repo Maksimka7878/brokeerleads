@@ -111,6 +111,52 @@ def migrate_stages(db: Session = Depends(get_db)):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+@app.get("/api/migrate_schema")
+def migrate_schema():
+    """Migrate database schema - create all missing tables and columns."""
+    try:
+        messages = []
+
+        # Create all tables if they don't exist
+        init_db()
+        messages.append("Created/verified all tables")
+
+        # For PostgreSQL, add missing columns manually (SQLAlchemy doesn't auto-migrate)
+        db = SessionLocal()
+        try:
+            if "postgresql" in str(db.bind.url):
+                # Add batch_id column if missing
+                try:
+                    db.execute(text("ALTER TABLE leads ADD COLUMN IF NOT EXISTS batch_id INTEGER"))
+                    messages.append("Added batch_id column to leads")
+                except Exception as e:
+                    messages.append(f"batch_id column: {str(e)}")
+
+                # Add foreign key constraint
+                try:
+                    db.execute(text("""
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (
+                                SELECT 1 FROM pg_constraint WHERE conname = 'leads_batch_id_fkey'
+                            ) THEN
+                                ALTER TABLE leads ADD CONSTRAINT leads_batch_id_fkey
+                                FOREIGN KEY (batch_id) REFERENCES lead_batches(id);
+                            END IF;
+                        END $$;
+                    """))
+                    messages.append("Added/verified foreign key constraint")
+                except Exception as e:
+                    messages.append(f"Foreign key: {str(e)}")
+
+                db.commit()
+        finally:
+            db.close()
+
+        return {"status": "success", "messages": messages}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 def ensure_admin_exists():
     """Helper to ensure admin exists. Call on startup and if login fails."""
     try:
