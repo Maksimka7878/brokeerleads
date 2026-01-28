@@ -32,6 +32,7 @@ git commit -m "Initial commit"
 
     - `TG_TOKEN`: Your Telegram Bot Token (from BotFather).
     - `SECRET_KEY`: A random string for security (e.g., generated via `openssl rand -hex 32`).
+    - `ADMIN_PASSWORD`: Admin user password (username: `admin`). Example: `8*hasdnc)910ajcNIASd`
     - `DATABASE_URL`:
       - **For Testing**: Leave empty (will use ephemeral SQLite, resets on redeploy).
       - **For Production**: Add a PostgreSQL URL (e.g., from Vercel Storage or Neon).
