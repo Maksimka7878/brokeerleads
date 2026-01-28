@@ -80,10 +80,13 @@ def record_login_attempt(ip_address: str, success: bool = False) -> None:
 @app.on_event("startup")
 def on_startup():
     try:
+        print("[DEBUG] Application starting up...")
         init_db()
+        print("[DEBUG] Database initialized")
         ensure_admin_exists()
+        print("[DEBUG] Startup complete")
     except Exception as e:
-        print(f"Startup error: {e}")
+        print(f"[ERROR] Startup error: {e}")
 
 @app.get("/api/fix_schema")
 def fix_schema(db: Session = Depends(get_db)):
