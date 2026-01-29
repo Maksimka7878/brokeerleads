@@ -427,13 +427,13 @@ export default function Dashboard() {
                     <span className="text-xs text-violet-400 bg-violet-500/10 px-2 py-1 rounded-full">Сегодня</span>
                   </div>
                   <div className="flex items-end gap-2 mb-3">
-                    <span className="text-2xl font-bold text-white">24</span>
-                    <span className="text-slate-500 text-sm pb-1">/ 50</span>
+                    <span className="text-2xl font-bold text-white">{stats.daily_outreach_count}</span>
+                    <span className="text-slate-500 text-sm pb-1">/ {stats.daily_goal || 30}</span>
                   </div>
                   <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{ width: '48%' }}></div>
+                    <div className="progress-bar-fill" style={{ width: `${Math.min(((stats.daily_outreach_count || 0) / (stats.daily_goal || 30)) * 100, 100)}%` }}></div>
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">48% выполнено</p>
+                  <p className="text-xs text-slate-500 mt-2">{Math.round(((stats.daily_outreach_count || 0) / (stats.daily_goal || 30)) * 100)}% выполнено</p>
                 </div>
 
                 {/* Weekly Goal */}

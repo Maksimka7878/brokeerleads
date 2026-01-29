@@ -454,6 +454,15 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
 
         # Recent transactions for this user
         transactions = db.query(LeadTransaction).filter(LeadTransaction.user_id == current_user.id).order_by(LeadTransaction.timestamp.desc()).limit(10).all()
+        
+        # Calculate daily outreach: distinctive leads moved to "Первое сообщение" today
+        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        daily_outreach_count = db.query(Interaction.lead_id).filter(
+            Interaction.timestamp >= today_start,
+            Interaction.contact_method == "Move Stage",
+            Interaction.content.like("%to Первое сообщение")
+        ).distinct().count()
+        
     except Exception as e:
         print(f"[DEBUG] Error fetching stats: {e}")
         # Return empty stats if tables don't exist
@@ -461,6 +470,7 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         total_interactions = 0
         stage_counts = {}
         transactions = []
+        daily_outreach_count = 0
 
     return StatsResponse(
         total_leads=active_leads,
@@ -468,7 +478,8 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         leads_by_stage=stage_counts,
         user_balance=current_user.balance,
         telegram_connected=bool(current_user.telegram_chat_id),
-        recent_transactions=transactions
+        recent_transactions=transactions,
+        daily_outreach_count=daily_outreach_count
     )
 
 @app.post("/api/distribute")

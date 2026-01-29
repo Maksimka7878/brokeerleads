@@ -110,3 +110,5 @@ class StatsResponse(BaseModel):
     user_balance: Optional[int] = None
     telegram_connected: bool = False
     recent_transactions: List[TransactionResponse] = []
+    daily_outreach_count: int = 0
+    daily_goal: int = 30
