@@ -226,6 +226,7 @@ export default function KanbanBoard() {
       });
     } catch (err) {
       console.error("Failed to update stage", err);
+      alert("Не удалось сохранить изменение этапа. Проверьте консоль или соединение с сервером.");
       setLeads(prev => prev.map(l =>
         l.id === activeLeadId ? { ...l, stage: oldStage } : l
       ));

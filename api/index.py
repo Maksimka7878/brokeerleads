@@ -356,8 +356,11 @@ def add_interaction(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    print(f"[DEBUG] add_interaction called. Lead ID: {interaction.lead_id}, New Stage: {interaction.new_stage}")
+    
     db_lead = db.query(Lead).filter(Lead.id == interaction.lead_id).first()
     if not db_lead:
+        print(f"[DEBUG] Lead {interaction.lead_id} not found!")
         raise HTTPException(status_code=404, detail="Lead not found")
     
     new_interaction = Interaction(
@@ -368,6 +371,7 @@ def add_interaction(
     db.add(new_interaction)
     
     if interaction.new_stage:
+        print(f"[DEBUG] Updating stage from '{db_lead.stage}' to '{interaction.new_stage}'")
         db_lead.stage = interaction.new_stage
     
     if interaction.next_contact_date:
@@ -375,7 +379,14 @@ def add_interaction(
         
     db_lead.updated_at = datetime.now()
     
-    db.commit()
+    try:
+        db.commit()
+        print("[DEBUG] Interaction saved and lead updated.")
+    except Exception as e:
+        print(f"[ERROR] Failed to commit interaction: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+        
     return {"status": "success"}
 
 @app.post("/api/leads/{lead_id}/archive")
