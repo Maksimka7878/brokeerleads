@@ -420,20 +420,23 @@ export default function Dashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Daily Goal */}
-                <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-slate-400">Ежедневная цель</span>
-                    <span className="text-xs text-violet-400 bg-violet-500/10 px-2 py-1 rounded-full">Сегодня</span>
+                {/* Daily Stats & Growth */}
+                <div className="flex gap-3">
+                  {/* Today Count */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 flex-1 flex flex-col items-center justify-center min-h-[100px]">
+                    <span className="text-3xl font-bold text-white mb-1">{stats.daily_outreach_count}</span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">СЕГОДНЯ</span>
                   </div>
-                  <div className="flex items-end gap-2 mb-3">
-                    <span className="text-2xl font-bold text-white">{stats.daily_outreach_count}</span>
-                    <span className="text-slate-500 text-sm pb-1">/ {stats.daily_goal || 30}</span>
+
+                  {/* Growth */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 flex-1 flex flex-col items-center justify-center min-h-[100px]">
+                    <span className={`text-3xl font-bold mb-1 ${(stats.daily_growth || "0%").startsWith('+') ? 'text-emerald-400' :
+                        (stats.daily_growth || "0%").startsWith('-') ? 'text-rose-400' : 'text-slate-400'
+                      }`}>
+                      {stats.daily_growth || "0%"}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">РОСТ</span>
                   </div>
-                  <div className="progress-bar">
-                    <div className="progress-bar-fill" style={{ width: `${Math.min(((stats.daily_outreach_count || 0) / (stats.daily_goal || 30)) * 100, 100)}%` }}></div>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2">{Math.round(((stats.daily_outreach_count || 0) / (stats.daily_goal || 30)) * 100)}% выполнено</p>
                 </div>
 
                 {/* Weekly Goal */}

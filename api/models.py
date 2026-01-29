@@ -112,3 +112,4 @@ class StatsResponse(BaseModel):
     recent_transactions: List[TransactionResponse] = []
     daily_outreach_count: int = 0
     daily_goal: int = 30
+    daily_growth: str = "0%"

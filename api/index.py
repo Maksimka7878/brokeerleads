@@ -463,6 +463,21 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
             Interaction.content.like("%to Первое сообщение")
         ).distinct().count()
         
+        # Calculate yesterday's outreach for growth
+        yesterday_start = today_start - timedelta(days=1)
+        yesterday_count = db.query(Interaction.lead_id).filter(
+            Interaction.timestamp >= yesterday_start,
+            Interaction.timestamp < today_start,
+            Interaction.contact_method == "Move Stage",
+            Interaction.content.like("%to Первое сообщение")
+        ).distinct().count()
+        
+        if yesterday_count > 0:
+            growth_val = ((daily_outreach_count - yesterday_count) / yesterday_count) * 100
+            daily_growth = f"{'+' if growth_val > 0 else ''}{int(growth_val)}%"
+        else:
+            daily_growth = "+100%" if daily_outreach_count > 0 else "0%"
+        
     except Exception as e:
         print(f"[DEBUG] Error fetching stats: {e}")
         # Return empty stats if tables don't exist
@@ -471,6 +486,7 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         stage_counts = {}
         transactions = []
         daily_outreach_count = 0
+        daily_growth = "0%"
 
     return StatsResponse(
         total_leads=active_leads,
@@ -479,7 +495,8 @@ def get_stats(db: Session = Depends(get_db), current_user: User = Depends(get_cu
         user_balance=current_user.balance,
         telegram_connected=bool(current_user.telegram_chat_id),
         recent_transactions=transactions,
-        daily_outreach_count=daily_outreach_count
+        daily_outreach_count=daily_outreach_count,
+        daily_growth=daily_growth
     )
 
 @app.post("/api/distribute")
