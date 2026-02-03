@@ -271,10 +271,6 @@ export default function Dashboard() {
                   <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center border border-violet-500/20 group-hover:scale-110 transition-transform">
                     <Users className="w-5 h-5 text-violet-400" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-full">
-                    <TrendingUp className="w-3 h-3" />
-                    +12%
-                  </div>
                 </div>
                 <div className="text-3xl font-bold text-white mb-1">{stats.total_leads}</div>
                 <div className="text-sm text-slate-400">Всего лидов</div>
@@ -421,17 +417,18 @@ export default function Dashboard() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Daily Stats & Growth */}
-                <div className="flex gap-3">
+                {/* Daily Stats & Growth */}
+                <div className="bg-white/5 rounded-xl p-2 border border-white/5 flex gap-2">
                   {/* Today Count */}
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 flex-1 flex flex-col items-center justify-center min-h-[100px]">
+                  <div className="bg-white/5 rounded-lg p-3 flex-1 flex flex-col items-center justify-center min-h-[100px]">
                     <span className="text-3xl font-bold text-white mb-1">{stats.daily_outreach_count}</span>
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">СЕГОДНЯ</span>
                   </div>
 
                   {/* Growth */}
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/5 flex-1 flex flex-col items-center justify-center min-h-[100px]">
+                  <div className="bg-white/5 rounded-lg p-3 flex-1 flex flex-col items-center justify-center min-h-[100px]">
                     <span className={`text-3xl font-bold mb-1 ${(stats.daily_growth || "0%").startsWith('+') ? 'text-emerald-400' :
-                        (stats.daily_growth || "0%").startsWith('-') ? 'text-rose-400' : 'text-slate-400'
+                      (stats.daily_growth || "0%").startsWith('-') ? 'text-rose-400' : 'text-slate-400'
                       }`}>
                       {stats.daily_growth || "0%"}
                     </span>
